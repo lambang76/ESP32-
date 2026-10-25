@@ -15,7 +15,18 @@ export default function DashboardPage() {
   const [relayOn, setRelayOn] = useState(false);
 
   useEffect(() => {
-    const client = mqtt.connect("wss://broker.emqx.io:8084/mqtt", {
+    const host = process.env.NEXT_PUBLIC_EMQX_HOST;
+    const username = process.env.NEXT_PUBLIC_EMQX_USERNAME;
+    const password = process.env.NEXT_PUBLIC_EMQX_PASSWORD;
+
+    if (!host || !username || !password) {
+      setConnection("Missing EMQX configuration");
+      return;
+    }
+
+    const client = mqtt.connect(`wss://${host}:8084/mqtt`, {
+      username,
+      password,
       clientId: `dashboard-${Math.random().toString(16).slice(2, 10)}`,
       clean: true,
       connectTimeout: 10_000,

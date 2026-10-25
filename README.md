@@ -1,23 +1,26 @@
 # ESP32 IoT Monitor
 
-ESP32 DHT temperature/humidity reporting and relay control over the EMQX public MQTT broker, with a Next.js dashboard using MQTT over secure WebSockets.
+ESP32 DHT temperature/humidity reporting and relay control over an EMQX Cloud deployment, with a Next.js dashboard using MQTT over secure WebSockets.
 
 ## Firmware
 
 1. Open `firmware/` with PlatformIO.
-2. Set your Wi-Fi values in `firmware/src/main.cpp`.
+2. Set the Wi-Fi and EMQX username/password values in `firmware/src/main.cpp`.
 3. Set `DHT_PIN`, `DHT_TYPE`, and `RELAY_PIN` for your wiring.
 4. Build and upload to an ESP32.
 
-The firmware publishes readings every five seconds to `esp32/sensor/temperature` and `esp32/sensor/humidity`, and listens on `esp32/actuator/relay`. It uses the public broker at `broker.emqx.io:1883` without authentication or TLS.
+The firmware publishes readings every five seconds to `esp32/sensor/temperature` and `esp32/sensor/humidity`, and listens on `esp32/actuator/relay`. It connects to the EMQX Cloud deployment over MQTT/TLS on port `8883`. The current firmware uses `setInsecure()` for a quick test; replace it with the deployment CA certificate for production.
 
 ## Dashboard
 
 ```powershell
 cd web-dashboard
 npm install
+Copy-Item .env.example .env.local
 npm run dev
 ```
+
+Fill in `.env.local` with the EMQX username and password created under **Access Control → Authentication**. Set the same variables in Vercel before deployment. The `NEXT_PUBLIC_` credentials are visible in browser code, so use a dedicated account with only the permissions needed for these topics.
 
 ### Test without an ESP32
 
@@ -27,9 +30,9 @@ Open one terminal in `web-dashboard/` and run `npm run dev` for the dashboard. I
 npm run simulate:esp32
 ```
 
-The simulator connects to EMQX at `broker.emqx.io:1883`, publishes changing dummy temperature and humidity values every five seconds, and prints relay commands sent from the dashboard. Press `Ctrl+C` to stop it.
+The simulator connects to your EMQX Cloud deployment over MQTT/TLS on port `8883`, publishes changing dummy temperature and humidity values every five seconds, and prints relay commands sent from the dashboard. Press `Ctrl+C` to stop it.
 
-The dashboard connects to `wss://broker.emqx.io:8084/mqtt`. EMQX's public broker has no authentication: anyone can publish to or subscribe to these topics. Use it for demos only, avoid sending private data, and choose a unique topic prefix if you want to reduce accidental collisions.
+The dashboard connects to `wss://<your-emqx-host>:8084/mqtt`.
 
 ## Topics
 

@@ -1,14 +1,16 @@
 #include <Arduino.h>
 #include <WiFi.h>
-#include <WiFiClient.h>
+#include <WiFiClientSecure.h>
 #include <PubSubClient.h>
 #include <DHT.h>
 
-// Replace these values before flashing. Do not commit real Wi-Fi credentials.
+// Fill these in locally. Never commit real credentials.
 #define WIFI_SSID       "YOUR_WIFI_NAME"
 #define WIFI_PASSWORD   "YOUR_WIFI_PASSWORD"
-#define MQTT_HOST       "broker.emqx.io"
-#define MQTT_PORT       1883
+#define MQTT_HOST       "d616e0e8.ala.asia-southeast1.emqxsl.com"
+#define MQTT_PORT       8883
+#define MQTT_USERNAME   "YOUR_EMQX_USERNAME"
+#define MQTT_PASSWORD   "YOUR_EMQX_PASSWORD"
 
 #define DHT_PIN         4
 #define DHT_TYPE        DHT22 // Change to DHT11 if that is your sensor.
@@ -23,8 +25,8 @@ const char* HUMIDITY_TOPIC = "esp32/sensor/humidity";
 const char* RELAY_TOPIC = "esp32/actuator/relay";
 
 DHT dht(DHT_PIN, DHT_TYPE);
-WiFiClient wifiClient;
-PubSubClient mqttClient(wifiClient);
+WiFiClientSecure secureClient;
+PubSubClient mqttClient(secureClient);
 
 unsigned long lastSensorReadMs = 0;
 unsigned long lastWifiAttemptMs = 0;
@@ -69,7 +71,7 @@ void connectMqtt() {
   const String clientId =
       "esp32-" + String(static_cast<uint32_t>(ESP.getEfuseMac()), HEX);
 
-  if (mqttClient.connect(clientId.c_str())) {
+  if (mqttClient.connect(clientId.c_str(), MQTT_USERNAME, MQTT_PASSWORD)) {
     mqttClient.subscribe(RELAY_TOPIC);
     Serial.println("MQTT connected; subscribed to relay topic");
   } else {
@@ -84,6 +86,10 @@ void setup() {
 
   dht.begin();
   WiFi.mode(WIFI_STA);
+
+  // For a quick test only. For production, use secureClient.setCACert()
+  // with the CA certificate downloaded from the EMQX deployment page.
+  secureClient.setInsecure();
 
   mqttClient.setServer(MQTT_HOST, MQTT_PORT);
   mqttClient.setCallback(onMqttMessage);
