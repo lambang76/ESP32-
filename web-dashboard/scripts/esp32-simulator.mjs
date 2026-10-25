@@ -1,40 +1,10 @@
-import { readFileSync } from "node:fs";
 import mqtt from "mqtt";
 
-// Load .env.local for the simulator. Existing process environment takes priority.
-try {
-  const contents = readFileSync(new URL("../.env.local", import.meta.url), "utf8");
-  for (const line of contents.split(/\r?\n/)) {
-    const trimmed = line.trim();
-    if (!trimmed || trimmed.startsWith("#")) continue;
+const TEMP_TOPIC = "rizki/jtd/esp32/sensor/temperature";
+const HUMIDITY_TOPIC = "rizki/jtd/esp32/sensor/humidity";
+const RELAY_TOPIC = "rizki/jtd/esp32/actuator/relay";
 
-    const separator = trimmed.indexOf("=");
-    if (separator < 1) continue;
-
-    const key = trimmed.slice(0, separator).trim();
-    const value = trimmed.slice(separator + 1).trim().replace(/^['"]|['"]$/g, "");
-    if (process.env[key] === undefined) process.env[key] = value;
-  }
-} catch {
-  // Allows credentials to be supplied through process environment instead.
-}
-
-const host = process.env.NEXT_PUBLIC_HIVEMQ_HOST;
-const username = process.env.NEXT_PUBLIC_HIVEMQ_USERNAME;
-const password = process.env.NEXT_PUBLIC_HIVEMQ_PASSWORD;
-
-if (!host || !username || !password) {
-  console.error("Missing HiveMQ settings. Fill web-dashboard/.env.local first.");
-  process.exit(1);
-}
-
-const TEMP_TOPIC = "project/sensor/temperature";
-const HUMIDITY_TOPIC = "project/sensor/humidity";
-const RELAY_TOPIC = "project/actuator/relay";
-
-const client = mqtt.connect(`mqtts://${host}:8883`, {
-  username,
-  password,
+const client = mqtt.connect("mqtt://broker.emqx.io:1883", {
   clientId: `esp32-sim-${Math.random().toString(16).slice(2, 10)}`,
   clean: true,
   connectTimeout: 10_000,
@@ -45,14 +15,14 @@ let temperature = 25.0;
 let humidity = 58.0;
 
 client.on("connect", () => {
-  console.log("ESP32 simulator connected to HiveMQ over MQTT/TLS");
+  console.log("ESP32 simulator connected to EMQX public broker over MQTT");
   client.subscribe(RELAY_TOPIC, (error) => {
     if (error) console.error("Relay subscribe failed:", error.message);
     else console.log(`Listening for relay commands on ${RELAY_TOPIC}`);
   });
 });
 
-client.on("reconnect", () => console.log("Reconnecting to HiveMQ..."));
+client.on("reconnect", () => console.log("Reconnecting to EMQX..."));
 client.on("error", (error) => console.error("MQTT error:", error.message));
 client.on("message", (topic, message) => {
   if (topic === RELAY_TOPIC) {

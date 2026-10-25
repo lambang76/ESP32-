@@ -3,9 +3,9 @@
 import { useEffect, useRef, useState } from "react";
 import mqtt, { type MqttClient } from "mqtt";
 
-const TEMP_TOPIC = "project/sensor/temperature";
-const HUMIDITY_TOPIC = "project/sensor/humidity";
-const RELAY_TOPIC = "project/actuator/relay";
+const TEMP_TOPIC = "rizki/jtd/esp32/sensor/temperature";
+const HUMIDITY_TOPIC = "rizki/jtd/esp32/sensor/humidity";
+const RELAY_TOPIC = "rizki/jtd/esp32/actuator/relay";
 
 export default function DashboardPage() {
   const clientRef = useRef<MqttClient | null>(null);
@@ -15,18 +15,7 @@ export default function DashboardPage() {
   const [relayOn, setRelayOn] = useState(false);
 
   useEffect(() => {
-    const host = process.env.NEXT_PUBLIC_HIVEMQ_HOST;
-    const username = process.env.NEXT_PUBLIC_HIVEMQ_USERNAME;
-    const password = process.env.NEXT_PUBLIC_HIVEMQ_PASSWORD;
-
-    if (!host || !username || !password) {
-      setConnection("Missing MQTT configuration");
-      return;
-    }
-
-    const client = mqtt.connect(`wss://${host}:8884/mqtt`, {
-      username,
-      password,
+    const client = mqtt.connect("wss://broker.emqx.io:8084/mqtt", {
       clientId: `dashboard-${Math.random().toString(16).slice(2, 10)}`,
       clean: true,
       connectTimeout: 10_000,

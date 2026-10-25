@@ -1,16 +1,14 @@
 #include <Arduino.h>
 #include <WiFi.h>
-#include <WiFiClientSecure.h>
+#include <WiFiClient.h>
 #include <PubSubClient.h>
 #include <DHT.h>
 
-// Replace these values before flashing. Do not commit real credentials.
+// Replace these values before flashing. Do not commit real Wi-Fi credentials.
 #define WIFI_SSID       "YOUR_WIFI_NAME"
 #define WIFI_PASSWORD   "YOUR_WIFI_PASSWORD"
-#define MQTT_HOST       "YOUR_CLUSTER_URL.s1.eu.hivemq.cloud"
-#define MQTT_PORT       8883
-#define MQTT_USERNAME   "YOUR_HIVEMQ_USERNAME"
-#define MQTT_PASSWORD   "YOUR_HIVEMQ_PASSWORD"
+#define MQTT_HOST       "broker.emqx.io"
+#define MQTT_PORT       1883
 
 #define DHT_PIN         4
 #define DHT_TYPE        DHT22 // Change to DHT11 if that is your sensor.
@@ -20,13 +18,13 @@ constexpr unsigned long SENSOR_INTERVAL_MS = 5000;
 constexpr unsigned long WIFI_RETRY_MS = 5000;
 constexpr unsigned long MQTT_RETRY_MS = 5000;
 
-const char* TEMP_TOPIC = "project/sensor/temperature";
-const char* HUMIDITY_TOPIC = "project/sensor/humidity";
-const char* RELAY_TOPIC = "project/actuator/relay";
+const char* TEMP_TOPIC = "rizki/jtd/esp32/sensor/temperature";
+const char* HUMIDITY_TOPIC = "rizki/jtd/esp32/sensor/humidity";
+const char* RELAY_TOPIC = "rizki/jtd/esp32/actuator/relay";
 
 DHT dht(DHT_PIN, DHT_TYPE);
-WiFiClientSecure secureClient;
-PubSubClient mqttClient(secureClient);
+WiFiClient wifiClient;
+PubSubClient mqttClient(wifiClient);
 
 unsigned long lastSensorReadMs = 0;
 unsigned long lastWifiAttemptMs = 0;
@@ -71,7 +69,7 @@ void connectMqtt() {
   const String clientId =
       "esp32-" + String(static_cast<uint32_t>(ESP.getEfuseMac()), HEX);
 
-  if (mqttClient.connect(clientId.c_str(), MQTT_USERNAME, MQTT_PASSWORD)) {
+  if (mqttClient.connect(clientId.c_str())) {
     mqttClient.subscribe(RELAY_TOPIC);
     Serial.println("MQTT connected; subscribed to relay topic");
   } else {
@@ -86,10 +84,6 @@ void setup() {
 
   dht.begin();
   WiFi.mode(WIFI_STA);
-
-  // Development convenience: skips broker certificate verification.
-  // For production, replace with secureClient.setCACert(rootCa).
-  secureClient.setInsecure();
 
   mqttClient.setServer(MQTT_HOST, MQTT_PORT);
   mqttClient.setCallback(onMqttMessage);
