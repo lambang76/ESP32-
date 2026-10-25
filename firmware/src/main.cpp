@@ -18,9 +18,9 @@ constexpr unsigned long SENSOR_INTERVAL_MS = 5000;
 constexpr unsigned long WIFI_RETRY_MS = 5000;
 constexpr unsigned long MQTT_RETRY_MS = 5000;
 
-const char* TEMP_TOPIC = "rizki/jtd/esp32/sensor/temperature";
-const char* HUMIDITY_TOPIC = "rizki/jtd/esp32/sensor/humidity";
-const char* RELAY_TOPIC = "rizki/jtd/esp32/actuator/relay";
+const char* TEMP_TOPIC = "esp32/sensor/temperature";
+const char* HUMIDITY_TOPIC = "esp32/sensor/humidity";
+const char* RELAY_TOPIC = "esp32/actuator/relay";
 
 DHT dht(DHT_PIN, DHT_TYPE);
 WiFiClient wifiClient;

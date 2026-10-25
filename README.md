@@ -9,7 +9,7 @@ ESP32 DHT temperature/humidity reporting and relay control over the EMQX public 
 3. Set `DHT_PIN`, `DHT_TYPE`, and `RELAY_PIN` for your wiring.
 4. Build and upload to an ESP32.
 
-The firmware publishes readings every five seconds to `rizki/jtd/esp32/sensor/temperature` and `rizki/jtd/esp32/sensor/humidity`, and listens on `rizki/jtd/esp32/actuator/relay`. It uses the public broker at `broker.emqx.io:1883` without authentication or TLS.
+The firmware publishes readings every five seconds to `esp32/sensor/temperature` and `esp32/sensor/humidity`, and listens on `esp32/actuator/relay`. It uses the public broker at `broker.emqx.io:1883` without authentication or TLS.
 
 ## Dashboard
 
@@ -35,6 +35,6 @@ The dashboard connects to `wss://broker.emqx.io:8084/mqtt`. EMQX's public broker
 
 | Topic | Direction | Payload |
 | --- | --- | --- |
-| `rizki/jtd/esp32/sensor/temperature` | ESP32 → dashboard | Temperature in Celsius |
-| `rizki/jtd/esp32/sensor/humidity` | ESP32 → dashboard | Relative humidity percentage |
-| `rizki/jtd/esp32/actuator/relay` | Dashboard → ESP32 | `ON` or `OFF` |
+| `esp32/sensor/temperature` | ESP32 → dashboard | Temperature in Celsius |
+| `esp32/sensor/humidity` | ESP32 → dashboard | Relative humidity percentage |
+| `esp32/actuator/relay` | Dashboard → ESP32 | `ON` or `OFF` |

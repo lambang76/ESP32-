@@ -3,9 +3,9 @@
 import { useEffect, useRef, useState } from "react";
 import mqtt, { type MqttClient } from "mqtt";
 
-const TEMP_TOPIC = "rizki/jtd/esp32/sensor/temperature";
-const HUMIDITY_TOPIC = "rizki/jtd/esp32/sensor/humidity";
-const RELAY_TOPIC = "rizki/jtd/esp32/actuator/relay";
+const TEMP_TOPIC = "esp32/sensor/temperature";
+const HUMIDITY_TOPIC = "esp32/sensor/humidity";
+const RELAY_TOPIC = "esp32/actuator/relay";
 
 export default function DashboardPage() {
   const clientRef = useRef<MqttClient | null>(null);

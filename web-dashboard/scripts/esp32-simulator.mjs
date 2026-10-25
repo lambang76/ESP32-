@@ -1,8 +1,8 @@
 import mqtt from "mqtt";
 
-const TEMP_TOPIC = "rizki/jtd/esp32/sensor/temperature";
-const HUMIDITY_TOPIC = "rizki/jtd/esp32/sensor/humidity";
-const RELAY_TOPIC = "rizki/jtd/esp32/actuator/relay";
+const TEMP_TOPIC = "esp32/sensor/temperature";
+const HUMIDITY_TOPIC = "esp32/sensor/humidity";
+const RELAY_TOPIC = "esp32/actuator/relay";
 
 const client = mqtt.connect("mqtt://broker.emqx.io:1883", {
   clientId: `esp32-sim-${Math.random().toString(16).slice(2, 10)}`,
