@@ -5,7 +5,8 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start"
+    "start": "next start",
+    "simulate:esp32": "node scripts/esp32-simulator.mjs"
   },
   "dependencies": {
     "mqtt": "^5.10.4",

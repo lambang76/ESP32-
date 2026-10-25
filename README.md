@@ -22,6 +22,16 @@ npm run dev
 
 Fill in `.env.local` with the HiveMQ host and credentials. For Vercel, add the same variables in the project environment settings.
 
+### Test without an ESP32
+
+With `.env.local` filled in, open one terminal in `web-dashboard/` and run `npm run dev` for the dashboard. In a second terminal in the same folder, run:
+
+```powershell
+npm run simulate:esp32
+```
+
+The simulator connects to HiveMQ over MQTT/TLS, publishes changing dummy temperature and humidity values every five seconds, and prints relay commands sent from the dashboard. Press `Ctrl+C` to stop it.
+
 The browser dashboard connects directly to HiveMQ. Therefore, `NEXT_PUBLIC_` credentials are visible in the browser bundle. Use a dedicated HiveMQ credential with narrowly scoped permissions for the required topics. To keep credentials private, move MQTT access behind a server-side service.
 
 ## Topics
