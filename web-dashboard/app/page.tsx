@@ -275,23 +275,23 @@ export default function DashboardPage() {
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,rgba(8,145,178,0.16),transparent_35%),radial-gradient(ellipse_at_bottom_right,rgba(15,23,42,0.75),transparent_45%)]" />
 
       <header className="relative border-b border-white/10 bg-slate-950/40 backdrop-blur-xl">
-        <div className="mx-auto flex max-w-7xl flex-col gap-5 px-5 py-5 sm:flex-row sm:items-center sm:justify-between sm:px-8">
-          <div className="flex items-center gap-4">
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-cyan-300/20 bg-cyan-400/10 text-cyan-300 shadow-lg shadow-cyan-950/30">
-              <DoorOpen size={24} />
+        <div className="mx-auto flex max-w-7xl flex-col gap-4 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6 sm:py-5 lg:px-8">
+          <div className="flex min-w-0 items-center gap-3 sm:gap-4">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-cyan-300/20 bg-cyan-400/10 text-cyan-300 shadow-lg shadow-cyan-950/30 sm:h-12 sm:w-12">
+              <DoorOpen size={22} />
             </div>
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.24em] text-cyan-300">
+            <div className="min-w-0">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-cyan-300 sm:text-xs sm:tracking-[0.24em]">
                 JTD · GARAGE IOT
               </p>
-              <h1 className="mt-1 text-xl font-semibold tracking-tight sm:text-2xl">
+              <h1 className="mt-1 text-base font-semibold leading-tight tracking-tight sm:text-xl lg:text-2xl">
                 Smart Garage Control Panel
               </h1>
             </div>
           </div>
 
           <div
-            className={`inline-flex w-fit items-center gap-2 rounded-full border px-4 py-2 text-sm font-medium ${
+            className={`inline-flex w-fit items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-medium sm:px-4 sm:py-2 sm:text-sm ${
               isConnected
                 ? "border-emerald-400/20 bg-emerald-400/10 text-emerald-300"
                 : "border-rose-400/20 bg-rose-400/10 text-rose-300"
@@ -304,11 +304,11 @@ export default function DashboardPage() {
         </div>
       </header>
 
-      <div className="relative mx-auto max-w-7xl px-5 py-8 sm:px-8 sm:py-10">
+      <div className="relative mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-8 lg:px-8 lg:py-10">
         <div className="mb-8 flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
           <div>
-            <p className="text-sm font-medium text-cyan-300">SMART ACCESS · REAL-TIME MONITORING</p>
-            <h2 className="mt-2 text-3xl font-semibold tracking-tight sm:text-4xl">
+            <p className="text-[11px] font-medium tracking-[0.12em] text-cyan-300 sm:text-sm sm:tracking-normal">SMART ACCESS · REAL-TIME MONITORING</p>
+            <h2 className="mt-2 text-2xl font-semibold tracking-tight sm:text-3xl lg:text-4xl">
               Garasi & pagar pintar
             </h2>
             <p className="mt-2 max-w-xl text-sm leading-6 text-slate-400">
@@ -345,9 +345,9 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        <section className="grid gap-5 lg:grid-cols-3" aria-label="Garage status and metrics">
+        <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3 xl:gap-5" aria-label="Garage status and metrics">
           <article
-            className={`relative min-h-64 overflow-hidden rounded-3xl border p-6 shadow-2xl backdrop-blur-xl sm:p-7 ${
+            className={`relative min-h-56 overflow-hidden rounded-3xl border p-5 shadow-2xl backdrop-blur-xl sm:min-h-64 sm:p-7 ${
               doorState === "open"
                 ? "border-amber-300/20 bg-gradient-to-br from-amber-500/15 via-slate-900/90 to-slate-900 shadow-amber-950/20"
                 : doorState === "closed"
@@ -376,7 +376,7 @@ export default function DashboardPage() {
             </div>
           </article>
 
-          <article className="relative min-h-64 overflow-hidden rounded-3xl border border-violet-300/15 bg-gradient-to-br from-violet-500/10 via-slate-900/85 to-slate-900 p-6 shadow-2xl shadow-violet-950/20 backdrop-blur-xl sm:p-7">
+          <article className="relative min-h-56 overflow-hidden rounded-3xl border border-violet-300/15 bg-gradient-to-br from-violet-500/10 via-slate-900/85 to-slate-900 p-5 shadow-2xl shadow-violet-950/20 backdrop-blur-xl sm:min-h-64 sm:p-7">
             <div className="flex items-start justify-between">
               <div>
                 <p className="text-sm font-medium text-slate-400">AKSES RFID TERAKHIR</p>
@@ -394,12 +394,12 @@ export default function DashboardPage() {
             </div>
           </article>
 
-          <article className="relative min-h-64 overflow-hidden rounded-3xl border border-cyan-300/15 bg-gradient-to-br from-cyan-500/10 via-slate-900/85 to-slate-900 p-6 shadow-2xl shadow-cyan-950/20 backdrop-blur-xl sm:p-7">
+          <article className="relative min-h-56 overflow-hidden rounded-3xl border border-cyan-300/15 bg-gradient-to-br from-cyan-500/10 via-slate-900/85 to-slate-900 p-5 shadow-2xl shadow-cyan-950/20 backdrop-blur-xl md:col-span-2 xl:col-span-1 sm:min-h-64 sm:p-7">
             <div className="flex items-start justify-between">
               <div>
                 <p className="text-sm font-medium text-slate-400">LINGKUNGAN GARASI</p>
                 <div className="mt-5 flex items-baseline gap-2">
-                  <h3 className="text-5xl font-semibold tracking-tight">
+                  <h3 className="text-4xl font-semibold tracking-tight sm:text-5xl">
                     {temperature === null ? "--" : temperature.toFixed(1)}
                   </h3>
                   <span className="text-xl text-slate-400">°C</span>
@@ -417,8 +417,8 @@ export default function DashboardPage() {
           </article>
         </section>
 
-        <section className="mt-5 grid gap-5 lg:grid-cols-[1.1fr_0.9fr]">
-          <article className="rounded-3xl border border-slate-700/70 bg-slate-900/60 p-6 shadow-2xl shadow-black/20 backdrop-blur-xl sm:p-7">
+        <section className="mt-4 grid gap-4 lg:mt-5 lg:grid-cols-[1.1fr_0.9fr] lg:gap-5">
+          <article className="min-w-0 rounded-3xl border border-slate-700/70 bg-slate-900/60 p-5 shadow-2xl shadow-black/20 backdrop-blur-xl sm:p-7">
             <div className="flex items-center gap-3">
               <div className="rounded-xl border border-cyan-300/15 bg-cyan-300/10 p-2.5 text-cyan-200">
                 <Power size={20} />
@@ -431,12 +431,12 @@ export default function DashboardPage() {
             <p className="mt-4 text-sm leading-6 text-slate-400">
               Perintah dikirim ke perangkat terpilih melalui MQTT. Status pintu diperbarui saat sensor mengirim topik <code className="text-cyan-200">pintu</code>.
             </p>
-            <div className="mt-6 grid gap-3 sm:grid-cols-2">
+            <div className="mt-5 grid gap-3 sm:mt-6 sm:grid-cols-2">
               <button
                 type="button"
                 onClick={() => publishGateCommand("OPEN")}
                 disabled={!isConnected || !selectedDevice?.topic_pub}
-                className="inline-flex min-h-14 items-center justify-center gap-2 rounded-xl border border-amber-300/25 bg-amber-400/10 px-5 py-3 text-sm font-bold tracking-wide text-amber-100 transition hover:border-amber-200/50 hover:bg-amber-400/20 disabled:cursor-not-allowed disabled:opacity-40"
+                className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border border-amber-300/25 bg-amber-400/10 px-3 py-3 text-xs font-bold tracking-wide text-amber-100 transition hover:border-amber-200/50 hover:bg-amber-400/20 disabled:cursor-not-allowed disabled:opacity-40 sm:min-h-14 sm:px-5 sm:text-sm"
               >
                 <DoorOpen size={18} /> BUKA GARASI
               </button>
@@ -444,14 +444,14 @@ export default function DashboardPage() {
                 type="button"
                 onClick={() => publishGateCommand("CLOSE")}
                 disabled={!isConnected || !selectedDevice?.topic_pub}
-                className="inline-flex min-h-14 items-center justify-center gap-2 rounded-xl border border-emerald-300/25 bg-emerald-400/10 px-5 py-3 text-sm font-bold tracking-wide text-emerald-100 transition hover:border-emerald-200/50 hover:bg-emerald-400/20 disabled:cursor-not-allowed disabled:opacity-40"
+                className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border border-emerald-300/25 bg-emerald-400/10 px-3 py-3 text-xs font-bold tracking-wide text-emerald-100 transition hover:border-emerald-200/50 hover:bg-emerald-400/20 disabled:cursor-not-allowed disabled:opacity-40 sm:min-h-14 sm:px-5 sm:text-sm"
               >
                 <DoorClosed size={18} /> TUTUP GARASI
               </button>
             </div>
-            <div className="mt-4 flex flex-wrap items-center justify-between gap-2 text-xs text-slate-500">
-              <span>Publish topic: <code className="text-slate-300">{selectedDevice?.topic_pub || "—"}</code></span>
-              <span>{lastCommand ? `Perintah terakhir: ${lastCommand}` : "Belum ada perintah dikirim"}</span>
+            <div className="mt-4 flex flex-col gap-2 text-xs text-slate-500 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
+              <span className="min-w-0 break-all">Publish topic: <code className="text-slate-300">{selectedDevice?.topic_pub || "—"}</code></span>
+              <span className="shrink-0">{lastCommand ? `Perintah terakhir: ${lastCommand}` : "Belum ada perintah dikirim"}</span>
             </div>
           </article>
 
@@ -470,12 +470,12 @@ export default function DashboardPage() {
                 <span className="h-2.5 w-2.5 rounded-full bg-emerald-400/80" />
               </div>
             </div>
-            <div className="h-64 space-y-2 overflow-y-auto p-4 font-mono text-xs sm:p-5">
+            <div className="h-56 space-y-2 overflow-y-auto p-3 font-mono text-[11px] sm:h-64 sm:p-5 sm:text-xs">
               {terminalEntries.length === 0 ? (
                 <p className="text-slate-600">// Menunggu pesan MQTT...</p>
               ) : (
                 terminalEntries.map((entry) => (
-                  <div key={entry.id} className="grid grid-cols-[4.5rem_minmax(0,1fr)] gap-x-3 gap-y-1 leading-5 sm:grid-cols-[4.5rem_minmax(0,1fr)]">
+                  <div key={entry.id} className="grid grid-cols-[3.5rem_minmax(0,1fr)] gap-x-2 gap-y-1 leading-5 sm:grid-cols-[4.5rem_minmax(0,1fr)] sm:gap-x-3">
                     <span className="text-slate-600">{entry.time}</span>
                     <span className="truncate text-cyan-300/80">{entry.topic}</span>
                     <span className="col-start-2 break-all text-slate-300">{entry.payload}</span>
