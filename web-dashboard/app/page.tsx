@@ -1,4 +1,7 @@
+"use client";
+
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import {
   Activity,
   ArrowRight,
@@ -7,10 +10,13 @@ import {
   DoorClosed,
   Fingerprint,
   Gauge,
+  LogOut,
   ShieldCheck,
+  UserRound,
   Wifi,
   Zap,
 } from "lucide-react";
+import { supabase } from "@/lib/supabaseClient";
 
 const features = [
   {
@@ -34,6 +40,43 @@ const features = [
 ];
 
 export default function HomePage() {
+  const [member, setMember] = useState<string | null>(null);
+  const [authLoading, setAuthLoading] = useState(true);
+  const [loggingOut, setLoggingOut] = useState(false);
+
+  useEffect(() => {
+    if (!supabase) {
+      setAuthLoading(false);
+      return;
+    }
+
+    let active = true;
+    const updateMember = (user: { email?: string | null; user_metadata?: Record<string, unknown> } | null) => {
+      if (!active) return;
+      const username = user?.user_metadata?.username;
+      setMember(user ? (typeof username === "string" && username ? username : user.email || "Anggota") : null);
+      setAuthLoading(false);
+    };
+
+    const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
+      updateMember(session?.user ?? null);
+    });
+    void supabase.auth.getSession().then(({ data: { session } }) => updateMember(session?.user ?? null));
+
+    return () => {
+      active = false;
+      authListener.subscription.unsubscribe();
+    };
+  }, []);
+
+  async function handleLogout() {
+    if (!supabase) return;
+    setLoggingOut(true);
+    await supabase.auth.signOut();
+    setMember(null);
+    setLoggingOut(false);
+  }
+
   return (
     <main className="relative min-h-screen overflow-hidden bg-[#07111e] text-slate-100">
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_12%_0%,rgba(8,145,178,0.2),transparent_34%),radial-gradient(ellipse_at_90%_30%,rgba(109,40,217,0.14),transparent_38%)]" />
@@ -63,12 +106,31 @@ export default function HomePage() {
             <Link href="/panduan" className="rounded-xl px-2 py-2 text-xs font-medium text-cyan-200 transition hover:text-white sm:px-3 sm:text-sm">
               Panduan
             </Link>
-            <Link href="/login" className="hidden rounded-xl px-3 py-2 text-sm font-medium text-slate-300 transition hover:text-white sm:inline-flex sm:px-4">
-              Masuk
-            </Link>
-            <Link href="/signup" className="inline-flex items-center gap-2 rounded-xl bg-cyan-400 px-3 py-2 text-sm font-bold text-slate-950 transition hover:bg-cyan-300 sm:px-4">
-              Daftar <ArrowUpRight size={15} />
-            </Link>
+            {authLoading ? (
+              <span className="hidden px-3 py-2 text-xs text-slate-500 sm:inline">Memuat akun…</span>
+            ) : member ? (
+              <>
+                <span title={member} className="inline-flex max-w-28 items-center gap-1.5 truncate rounded-xl border border-emerald-300/15 bg-emerald-300/[0.06] px-2.5 py-2 text-xs text-emerald-100 sm:max-w-44 sm:px-3 sm:text-sm">
+                  <UserRound size={15} className="shrink-0 text-emerald-300" />
+                  <span className="truncate">{member}</span>
+                </span>
+                <Link href="/dashboard" className="hidden rounded-xl px-3 py-2 text-sm font-medium text-slate-300 transition hover:text-white sm:inline-flex sm:px-4">
+                  Dashboard
+                </Link>
+                <button type="button" onClick={handleLogout} disabled={loggingOut} className="inline-flex items-center gap-1.5 rounded-xl border border-slate-700 px-2.5 py-2 text-xs font-medium text-slate-300 transition hover:border-rose-400/40 hover:text-rose-200 disabled:opacity-50 sm:px-3 sm:text-sm">
+                  <LogOut size={15} /> <span className="hidden sm:inline">{loggingOut ? "Keluar…" : "Keluar"}</span>
+                </button>
+              </>
+            ) : (
+              <>
+                <Link href="/login" className="hidden rounded-xl px-3 py-2 text-sm font-medium text-slate-300 transition hover:text-white sm:inline-flex sm:px-4">
+                  Masuk
+                </Link>
+                <Link href="/signup" className="inline-flex items-center gap-2 rounded-xl bg-cyan-400 px-3 py-2 text-sm font-bold text-slate-950 transition hover:bg-cyan-300 sm:px-4">
+                  Daftar <ArrowUpRight size={15} />
+                </Link>
+              </>
+            )}
           </div>
         </nav>
       </header>
