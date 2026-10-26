@@ -1,0 +1,89 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1100" height="760" viewBox="0 0 1100 760" role="img" aria-labelledby="title desc">
+  <title id="title">Protoboard layout for ESP32 Smart Garage</title>
+  <desc id="desc">Top-down perfboard wiring layout for ESP32 DevKit, DHT22 module and one-channel relay module. Shows 3.3 volt sensor connection, GPIO 4 data, GPIO 2 relay input, separate regulated relay 5 volt supply and shared ground.</desc>
+  <defs>
+    <pattern id="holes" width="18" height="18" patternUnits="userSpaceOnUse"><circle cx="9" cy="9" r="2.1" fill="#815f37"/><circle cx="8.4" cy="8.4" r=".8" fill="#d5b77d"/></pattern>
+    <style>
+      text{font-family:Arial,Helvetica,sans-serif;fill:#e5edf7}.title{font-size:27px;font-weight:700}.sub{font-size:14px;fill:#aab9ca}.label{font-size:15px;font-weight:700}.pin{font-size:13px;font-weight:600}.small{font-size:12px;fill:#c4cfdd}.tiny{font-size:11px;fill:#aab9ca}.part{fill:#132237;stroke:#d1d9e3;stroke-width:2}.wireRed{fill:none;stroke:#fb7185;stroke-width:4}.wireYellow{fill:none;stroke:#facc15;stroke-width:4}.wireGreen{fill:none;stroke:#34d399;stroke-width:4}.wireBlack{fill:none;stroke:#64748b;stroke-width:4}.wireBlue{fill:none;stroke:#60a5fa;stroke-width:4}.terminal{fill:#07111e;stroke:#d1d9e3;stroke-width:2}
+    </style>
+  </defs>
+  <rect width="1100" height="760" rx="18" fill="#07111e"/>
+  <text x="34" y="43" class="title">Layout Protoboard · ESP32 Smart Garage</text>
+  <text x="34" y="68" class="sub">Tampak atas · perfboard lubang 2,54 mm · sesuai sketch: DHT GPIO4, relay GPIO2</text>
+
+  <!-- perfboard -->
+  <rect x="48" y="100" width="735" height="600" rx="18" fill="#c89c5b" stroke="#f0d59d" stroke-width="3"/>
+  <rect x="62" y="114" width="707" height="572" rx="12" fill="url(#holes)" stroke="#a77d43" stroke-width="1"/>
+  <text x="70" y="132" class="tiny">PERFBOARD (lubang tidak saling tersambung — buat jalur bus dengan kabel jumper yang disolder)</text>
+
+  <!-- hand soldered power buses -->
+  <path d="M105 160 H720" class="wireRed"/>
+  <text x="108" y="153" class="tiny">BUS 3V3 sensor (kabel jumper disolder)</text>
+  <path d="M105 190 H720" class="wireBlack"/>
+  <text x="108" y="184" class="tiny">BUS GND bersama</text>
+
+  <!-- ESP32 devkit -->
+  <rect x="112" y="245" width="260" height="330" rx="20" fill="#183b48" stroke="#67d2c2" stroke-width="3"/>
+  <text x="242" y="276" text-anchor="middle" class="label">ESP32 DevKit</text>
+  <rect x="198" y="292" width="88" height="47" rx="9" fill="#0b1820" stroke="#67d2c2"/>
+  <text x="242" y="321" text-anchor="middle" class="tiny">USB</text>
+  <text x="132" y="380" class="pin">3V3</text><circle cx="355" cy="375" r="6" class="terminal"/>
+  <text x="132" y="426" class="pin">GPIO4</text><circle cx="355" cy="421" r="6" class="terminal"/>
+  <text x="132" y="472" class="pin">GPIO2</text><circle cx="355" cy="467" r="6" class="terminal"/>
+  <text x="132" y="518" class="pin">GND</text><circle cx="355" cy="513" r="6" class="terminal"/>
+  <text x="132" y="552" class="tiny">Power ESP32 lewat USB saat uji</text>
+
+  <!-- DHT module -->
+  <rect x="475" y="235" width="205" height="135" rx="14" class="part"/>
+  <text x="577" y="266" text-anchor="middle" class="label">Modul DHT22</text>
+  <text x="497" y="304" class="pin">VCC</text><circle cx="486" cy="300" r="5" class="terminal"/>
+  <text x="497" y="334" class="pin">DATA</text><circle cx="486" cy="330" r="5" class="terminal"/>
+  <text x="590" y="304" class="tiny">ke bus 3V3</text>
+  <text x="590" y="334" class="tiny">ke GPIO4</text>
+  <text x="475" y="392" class="tiny">Bare DHT22: tambah pull-up DATA ke 3V3 (4.7k–10k).</text>
+
+  <!-- Relay module -->
+  <rect x="450" y="425" width="290" height="190" rx="15" class="part"/>
+  <text x="595" y="456" text-anchor="middle" class="label">Modul Relay 1 Channel</text>
+  <text x="473" y="500" class="pin">IN</text><circle cx="461" cy="495" r="5" class="terminal"/>
+  <text x="473" y="540" class="pin">VCC</text><circle cx="461" cy="535" r="5" class="terminal"/>
+  <text x="473" y="580" class="pin">GND</text><circle cx="461" cy="575" r="5" class="terminal"/>
+  <text x="605" y="500" class="tiny">GPIO2 (input 3.3V-compatible)</text>
+  <text x="605" y="540" class="tiny">external 5V regulated</text>
+  <text x="605" y="580" class="tiny">GND common</text>
+  <text x="605" y="603" class="tiny">active-HIGH in firmware</text>
+
+  <!-- Component wiring -->
+  <path d="M355 375 H410 V300 H486" class="wireRed"/>
+  <path d="M355 421 H430 V330 H486" class="wireYellow"/>
+  <path d="M355 467 H410 V495 H461" class="wireGreen"/>
+  <path d="M355 513 H395 V190" class="wireBlack"/>
+  <path d="M486 300 H700 V160" class="wireRed"/>
+  <path d="M700 190 V575 H461" class="wireBlack"/>
+  <path d="M461 575 H700 V190" class="wireBlack"/>
+
+  <!-- off-board relay power and contacts -->
+  <rect x="825" y="260" width="230" height="125" rx="16" class="part"/>
+  <text x="940" y="292" text-anchor="middle" class="label">Catu DC teratur 5V</text>
+  <text x="850" y="335" class="pin">+5V</text><circle cx="835" cy="330" r="5" class="terminal"/>
+  <text x="973" y="335" class="pin">GND</text><circle cx="1045" cy="330" r="5" class="terminal"/>
+  <path d="M835 330 H800 V535 H461" class="wireRed"/>
+  <path d="M1045 330 H1080 V400 H760 V190 H700" class="wireBlack"/>
+
+  <rect x="825" y="440" width="230" height="165" rx="16" class="part"/>
+  <text x="940" y="472" text-anchor="middle" class="label">Kontak relay</text>
+  <text x="850" y="515" class="pin">COM</text><circle cx="835" cy="510" r="5" class="terminal"/>
+  <text x="850" y="555" class="pin">NO</text><circle cx="835" cy="550" r="5" class="terminal"/>
+  <text x="850" y="585" class="tiny">NC tidak dipakai</text>
+  <path d="M740 475 H790 V510 H835" class="wireBlue"/>
+  <rect x="825" y="625" width="230" height="72" rx="14" class="part"/>
+  <text x="940" y="648" text-anchor="middle" class="small">INPUT TOMBOL CONTROLLER GERBANG</text>
+  <text x="855" y="670" class="tiny">PB1</text><circle cx="835" cy="665" r="5" class="terminal"/>
+  <text x="855" y="695" class="tiny">PB2</text><circle cx="835" cy="690" r="5" class="terminal"/>
+  <path d="M835 510 H805 V665 H835" class="wireBlue"/>
+  <path d="M835 550 H790 V690 H835" class="wireBlue"/>
+  <text x="825" y="715" class="tiny">Dry contact tegangan rendah saja—jangan ke kabel motor/AC.</text>
+
+  <rect x="48" y="714" width="735" height="31" rx="8" fill="#102033" stroke="#334155"/>
+  <text x="62" y="734" class="tiny">Warna: merah = supply · kuning = DHT DATA · hijau = relay control · abu = GND · biru = kontak</text>
+</svg>
