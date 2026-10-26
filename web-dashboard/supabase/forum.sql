@@ -24,8 +24,8 @@ create index if not exists forum_replies_post_created_idx on public.forum_replie
 alter table public.forum_posts enable row level security;
 alter table public.forum_replies enable row level security;
 
-grant select, insert on public.forum_posts to authenticated;
-grant select, insert on public.forum_replies to authenticated;
+grant select, insert, update, delete on public.forum_posts to authenticated;
+grant select, insert, update, delete on public.forum_replies to authenticated;
 
 drop policy if exists "Members can read forum posts" on public.forum_posts;
 create policy "Members can read forum posts"
@@ -36,6 +36,17 @@ create policy "Members can create own forum posts"
   on public.forum_posts for insert to authenticated
   with check (auth.uid() = user_id);
 
+drop policy if exists "Members can update own forum posts" on public.forum_posts;
+create policy "Members can update own forum posts"
+  on public.forum_posts for update to authenticated
+  using (auth.uid() = user_id)
+  with check (auth.uid() = user_id);
+
+drop policy if exists "Members can delete own forum posts" on public.forum_posts;
+create policy "Members can delete own forum posts"
+  on public.forum_posts for delete to authenticated
+  using (auth.uid() = user_id);
+
 drop policy if exists "Members can read forum replies" on public.forum_replies;
 create policy "Members can read forum replies"
   on public.forum_replies for select to authenticated using (true);
@@ -44,4 +55,15 @@ drop policy if exists "Members can create own forum replies" on public.forum_rep
 create policy "Members can create own forum replies"
   on public.forum_replies for insert to authenticated
   with check (auth.uid() = user_id);
+
+drop policy if exists "Members can update own forum replies" on public.forum_replies;
+create policy "Members can update own forum replies"
+  on public.forum_replies for update to authenticated
+  using (auth.uid() = user_id)
+  with check (auth.uid() = user_id);
+
+drop policy if exists "Members can delete own forum replies" on public.forum_replies;
+create policy "Members can delete own forum replies"
+  on public.forum_replies for delete to authenticated
+  using (auth.uid() = user_id);
 

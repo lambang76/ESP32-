@@ -34,7 +34,7 @@ Run `web-dashboard/supabase/auth_policy.sql` in the Supabase SQL Editor to remov
 
 ### Member discussion forum
 
-Run `web-dashboard/supabase/forum.sql` in the Supabase SQL Editor to create the forum post/reply tables and authenticated-only RLS policies. The forum is available at `/forum` after login; members can create categorized discussions and reply.
+Run `web-dashboard/supabase/forum.sql` in the Supabase SQL Editor to create the forum post/reply tables and authenticated-only RLS policies. Re-run the script to add the edit/delete policies. The forum is available at `/forum` after login; members can create categorized discussions and reply.
 
 ### ESP32 health telemetry
 

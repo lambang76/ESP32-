@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { type FormEvent, useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, MessageCircle, MessageSquareText, Plus, Send, ShieldQuestion, Wifi } from "lucide-react";
+import { ArrowLeft, MessageCircle, MessageSquareText, Pencil, Plus, Send, ShieldQuestion, Trash2, Wifi } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 
 type Category = "Umum" | "Hardware" | "Firmware" | "Dashboard";
@@ -91,6 +91,45 @@ export default function ForumPage() {
     setSending(false);
   }
 
+  async function editPost(post: Post) {
+    if (!supabase) return;
+    const nextTitle = window.prompt("Ubah judul diskusi:", post.title);
+    if (nextTitle === null) return;
+    const nextContent = window.prompt("Ubah isi diskusi:", post.content);
+    if (nextContent === null) return;
+    if (nextTitle.trim().length < 3 || !nextContent.trim()) {
+      setError("Judul minimal 3 karakter dan isi diskusi tidak boleh kosong.");
+      return;
+    }
+    const { error: updateError } = await supabase.from("forum_posts").update({ title: nextTitle.trim(), content: nextContent.trim() }).eq("id", post.id).eq("user_id", userId);
+    if (updateError) setError("Diskusi gagal diperbarui. Jalankan ulang forum.sql untuk memperbarui policy.");
+    else await loadForum();
+  }
+
+  async function deletePost(post: Post) {
+    if (!supabase || !window.confirm("Hapus diskusi ini beserta semua balasannya?")) return;
+    const { error: deleteError } = await supabase.from("forum_posts").delete().eq("id", post.id).eq("user_id", userId);
+    if (deleteError) setError("Diskusi gagal dihapus. Jalankan ulang forum.sql untuk memperbarui policy.");
+    else await loadForum();
+  }
+
+  async function editReply(reply: Reply) {
+    if (!supabase) return;
+    const nextContent = window.prompt("Ubah balasan:", reply.content);
+    if (nextContent === null) return;
+    if (!nextContent.trim()) { setError("Balasan tidak boleh kosong."); return; }
+    const { error: updateError } = await supabase.from("forum_replies").update({ content: nextContent.trim() }).eq("id", reply.id).eq("user_id", userId);
+    if (updateError) setError("Balasan gagal diperbarui. Jalankan ulang forum.sql untuk memperbarui policy.");
+    else await loadForum();
+  }
+
+  async function deleteReply(reply: Reply) {
+    if (!supabase || !window.confirm("Hapus balasan ini?")) return;
+    const { error: deleteError } = await supabase.from("forum_replies").delete().eq("id", reply.id).eq("user_id", userId);
+    if (deleteError) setError("Balasan gagal dihapus. Jalankan ulang forum.sql untuk memperbarui policy.");
+    else await loadForum();
+  }
+
   const visiblePosts = categoryFilter === "Semua" ? posts : posts.filter((post) => post.category === categoryFilter);
   const dateLabel = (value: string) => new Date(value).toLocaleString("id-ID", { dateStyle: "medium", timeStyle: "short" });
 
@@ -104,7 +143,7 @@ export default function ForumPage() {
           {error && <p role="alert" className="rounded-xl border border-rose-400/20 bg-rose-400/10 p-4 text-sm text-rose-200">{error}</p>}
           {loading ? <div className="rounded-2xl border border-slate-800 bg-slate-900/50 p-8 text-center text-sm text-slate-400">Memuat diskusi...</div> : visiblePosts.length === 0 ? <div className="rounded-2xl border border-dashed border-slate-700 bg-slate-900/30 p-8 text-center"><MessageSquareText className="mx-auto text-slate-600" size={28}/><p className="mt-3 font-medium">Belum ada diskusi di kategori ini</p><p className="mt-1 text-sm text-slate-500">Jadilah yang pertama memulai percakapan.</p></div> : visiblePosts.map((post) => {
             const postReplies = replies.filter((reply) => reply.post_id === post.id);
-            return <article key={post.id} className="rounded-2xl border border-slate-800 bg-slate-900/55 p-5 sm:p-6"><div className="flex flex-wrap items-center justify-between gap-2"><span className="rounded-full border border-violet-300/15 bg-violet-300/[0.07] px-2.5 py-1 text-[11px] text-violet-200">{post.category}</span><time className="text-[11px] text-slate-500">{dateLabel(post.created_at)}</time></div><h2 className="mt-3 text-lg font-semibold">{post.title}</h2><p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-slate-300">{post.content}</p><p className="mt-4 text-xs text-slate-500">Oleh <span className="text-slate-300">{post.author_name || "Anggota"}</span></p><div className="mt-5 border-t border-slate-800 pt-4"><p className="mb-3 flex items-center gap-2 text-xs font-medium text-slate-400"><MessageCircle size={14}/> {postReplies.length} balasan</p>{postReplies.map((reply) => <div key={reply.id} className="mb-3 rounded-xl bg-slate-950/50 p-3"><p className="whitespace-pre-wrap text-sm text-slate-300">{reply.content}</p><p className="mt-2 text-[11px] text-slate-500">{reply.author_name || "Anggota"} · {dateLabel(reply.created_at)}</p></div>)}<form onSubmit={(event) => void createReply(event, post.id)} className="flex gap-2"><input aria-label="Tulis balasan" value={replyDrafts[post.id] || ""} onChange={(event) => setReplyDrafts((current) => ({ ...current, [post.id]: event.target.value }))} maxLength={1000} placeholder="Tulis balasan..." className="min-w-0 flex-1 rounded-xl border border-slate-800 bg-slate-950/70 px-3 py-2.5 text-sm text-white outline-none placeholder:text-slate-600 focus:border-cyan-400/60"/><button disabled={sending || !(replyDrafts[post.id] || "").trim()} aria-label="Kirim balasan" className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-cyan-400 text-slate-950 disabled:opacity-40"><Send size={16}/></button></form></div></article>;
+            return <article key={post.id} className="rounded-2xl border border-slate-800 bg-slate-900/55 p-5 sm:p-6"><div className="flex flex-wrap items-center justify-between gap-2"><span className="rounded-full border border-violet-300/15 bg-violet-300/[0.07] px-2.5 py-1 text-[11px] text-violet-200">{post.category}</span><time className="text-[11px] text-slate-500">{dateLabel(post.created_at)}</time></div><h2 className="mt-3 text-lg font-semibold">{post.title}</h2><p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-slate-300">{post.content}</p><p className="mt-4 text-xs text-slate-500">Oleh <span className="text-slate-300">{post.author_name || "Anggota"}</span></p><div className="mt-3 flex gap-2">{post.user_id === userId && <><button type="button" onClick={() => void editPost(post)} className="inline-flex items-center gap-1 rounded-lg border border-slate-700 px-2.5 py-1.5 text-xs text-slate-300 hover:border-cyan-400/40 hover:text-cyan-200"><Pencil size={13}/> Edit</button><button type="button" onClick={() => void deletePost(post)} className="inline-flex items-center gap-1 rounded-lg border border-slate-700 px-2.5 py-1.5 text-xs text-slate-300 hover:border-rose-400/40 hover:text-rose-200"><Trash2 size={13}/> Hapus</button></>}</div><div className="mt-5 border-t border-slate-800 pt-4"><p className="mb-3 flex items-center gap-2 text-xs font-medium text-slate-400"><MessageCircle size={14}/> {postReplies.length} balasan</p>{postReplies.map((reply) => <div key={reply.id} className="mb-3 rounded-xl bg-slate-950/50 p-3"><p className="whitespace-pre-wrap text-sm text-slate-300">{reply.content}</p><p className="mt-2 text-[11px] text-slate-500">{reply.author_name || "Anggota"} · {dateLabel(reply.created_at)}</p>{reply.user_id === userId && <div className="mt-2 flex gap-3"><button type="button" onClick={() => void editReply(reply)} className="inline-flex items-center gap-1 text-[11px] text-slate-500 hover:text-cyan-200"><Pencil size={12}/> Edit</button><button type="button" onClick={() => void deleteReply(reply)} className="inline-flex items-center gap-1 text-[11px] text-slate-500 hover:text-rose-200"><Trash2 size={12}/> Hapus</button></>} </div>)}<form onSubmit={(event) => void createReply(event, post.id)} className="flex gap-2"><input aria-label="Tulis balasan" value={replyDrafts[post.id] || ""} onChange={(event) => setReplyDrafts((current) => ({ ...current, [post.id]: event.target.value }))} maxLength={1000} placeholder="Tulis balasan..." className="min-w-0 flex-1 rounded-xl border border-slate-800 bg-slate-950/70 px-3 py-2.5 text-sm text-white outline-none placeholder:text-slate-600 focus:border-cyan-400/60"/><button disabled={sending || !(replyDrafts[post.id] || "").trim()} aria-label="Kirim balasan" className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-cyan-400 text-slate-950 disabled:opacity-40"><Send size={16}/></button></form></div></article>;
           })}
         </section>
         <aside className="order-1 h-fit lg:sticky lg:top-6 lg:order-2"><form onSubmit={createPost} className="rounded-2xl border border-slate-800 bg-slate-900/65 p-5 shadow-xl shadow-black/10 sm:p-6"><div className="mb-5 flex items-center gap-3"><span className="grid h-10 w-10 place-items-center rounded-xl bg-cyan-300/10 text-cyan-200"><Plus size={20}/></span><div><h2 className="font-semibold">Mulai diskusi</h2><p className="text-xs text-slate-500">Bagikan pertanyaan atau ide</p></div></div><label className="mb-2 block text-xs font-medium text-slate-400" htmlFor="forum-category">Kategori</label><select id="forum-category" value={category} onChange={(event) => setCategory(event.target.value as Category)} className={inputClass + " mb-4"}>{categories.map((item) => <option key={item}>{item}</option>)}</select><label className="mb-2 block text-xs font-medium text-slate-400" htmlFor="forum-title">Judul</label><input id="forum-title" required maxLength={120} value={title} onChange={(event) => setTitle(event.target.value)} placeholder="Apa yang ingin didiskusikan?" className={inputClass + " mb-4"}/><label className="mb-2 block text-xs font-medium text-slate-400" htmlFor="forum-content">Isi diskusi</label><textarea id="forum-content" required maxLength={5000} rows={5} value={content} onChange={(event) => setContent(event.target.value)} placeholder="Ceritakan detailnya supaya anggota lain bisa membantu..." className={inputClass + " resize-y"}/><button disabled={sending || !title.trim() || !content.trim()} className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-cyan-400 px-4 py-3 text-sm font-bold text-slate-950 hover:bg-cyan-300 disabled:cursor-not-allowed disabled:opacity-50"><Send size={16}/>{sending ? "Mengirim..." : "Publikasikan diskusi"}</button></form><div className="mt-4 rounded-2xl border border-slate-800 bg-slate-900/35 p-4"><p className="flex items-center gap-2 text-sm font-medium"><ShieldQuestion size={16} className="text-cyan-300"/> Ruang anggota</p><p className="mt-2 text-xs leading-5 text-slate-500">Diskusi hanya bisa dibaca dan ditulis setelah login. Jangan bagikan password, API key, atau kredensial perangkat di postingan.</p></div></aside>
