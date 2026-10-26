@@ -9,7 +9,7 @@ import { supabase } from "@/lib/supabaseClient";
 
 export default function LoginPage() {
   const router = useRouter();
-  const [email, setEmail] = useState("");
+  const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [checkingSession, setCheckingSession] = useState(true);
@@ -43,13 +43,34 @@ export default function LoginPage() {
 
     setLoading(true);
     setError(null);
-    const { error: signInError } = await supabase.auth.signInWithPassword({
-      email: email.trim(),
-      password,
-    });
+    let signInError: Error | null = null;
+    if (identifier.trim().includes("@")) {
+      const result = await supabase.auth.signInWithPassword({
+        email: identifier.trim(),
+        password,
+      });
+      signInError = result.error;
+    } else {
+      try {
+        const response = await fetch("/api/auth/username", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ username: identifier.trim(), password }),
+        });
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.error || "Username atau password tidak valid.");
+        const { error } = await supabase.auth.setSession({
+          access_token: result.access_token,
+          refresh_token: result.refresh_token,
+        });
+        signInError = error;
+      } catch (requestError) {
+        signInError = requestError instanceof Error ? requestError : new Error("Login gagal.");
+      }
+    }
 
     if (signInError) {
-      setError("Email atau password tidak valid.");
+      setError(signInError.message || "Email/username atau password tidak valid.");
       setLoading(false);
       return;
     }
@@ -66,15 +87,15 @@ export default function LoginPage() {
     >
       <form onSubmit={handleSubmit} className="space-y-5">
         <div>
-          <label htmlFor="email" className="mb-2 block text-sm font-medium text-slate-300">Email</label>
+          <label htmlFor="identifier" className="mb-2 block text-sm font-medium text-slate-300">Email atau username</label>
           <input
-            id="email"
-            type="email"
-            autoComplete="email"
+            id="identifier"
+            type="text"
+            autoComplete="username"
             required
-            value={email}
-            onChange={(event) => setEmail(event.target.value)}
-            placeholder="nama@kampus.ac.id"
+            value={identifier}
+            onChange={(event) => setIdentifier(event.target.value)}
+            placeholder="nama@kampus.ac.id atau username"
             className="w-full rounded-xl border border-slate-700 bg-slate-950/70 px-4 py-3 text-sm text-white outline-none transition placeholder:text-slate-600 focus:border-cyan-400/70 focus:ring-2 focus:ring-cyan-400/10"
           />
         </div>

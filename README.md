@@ -26,6 +26,8 @@ For device selection, also fill in `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_S
 
 ### Login and device-list access
 
+Username sign-in is supported for accounts created after this feature is enabled. Run `web-dashboard/supabase/username_login.sql` in the Supabase SQL Editor. Add `SUPABASE_SERVICE_ROLE_KEY` to `.env.local` and Vercel server environment variables; this key must never use the `NEXT_PUBLIC_` prefix or be exposed to browser code. Existing accounts can continue signing in with email; usernames are not automatically assigned to them.
+
 Enable email signups in Supabase **Authentication → Providers → Email**. The `/signup` page creates member accounts; if email confirmation is enabled, members must confirm the message before login. `/forgot-password` sends a recovery email and `/reset-password` accepts the new password. Add the production URL and local URL (`http://localhost:3000/**`) to Supabase **Authentication → URL Configuration → Redirect URLs**; add the Vercel production and preview URL patterns used by this project too.
 
 Run `web-dashboard/supabase/auth_policy.sql` in the Supabase SQL Editor to remove the earlier public read policy and allow signed-in users to read the device list. The dashboard now redirects signed-out visitors to `/login` and provides a logout button.

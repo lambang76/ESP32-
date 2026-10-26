@@ -9,6 +9,7 @@ import { supabase } from "@/lib/supabaseClient";
 
 export default function SignupPage() {
   const router = useRouter();
+  const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -25,6 +26,10 @@ export default function SignupPage() {
       setError("Konfigurasi Supabase belum tersedia.");
       return;
     }
+    if (!/^[a-zA-Z0-9_]{3,24}$/.test(username.trim())) {
+      setError("Username harus 3–24 karakter dan hanya boleh berisi huruf, angka, atau underscore.");
+      return;
+    }
     if (password.length < 8) {
       setError("Password minimal 8 karakter.");
       return;
@@ -39,6 +44,7 @@ export default function SignupPage() {
       email: email.trim(),
       password,
       options: {
+        data: { username: username.trim() },
         emailRedirectTo: `${window.location.origin}/login`,
       },
     });
@@ -66,6 +72,23 @@ export default function SignupPage() {
       icon={UserRoundPlus}
     >
       <form onSubmit={handleSubmit} className="space-y-4">
+        <div>
+          <label htmlFor="username" className="mb-2 block text-sm font-medium text-slate-300">Username</label>
+          <input
+            id="username"
+            type="text"
+            autoComplete="username"
+            minLength={3}
+            maxLength={24}
+            pattern="[A-Za-z0-9_]{3,24}"
+            required
+            value={username}
+            onChange={(event) => setUsername(event.target.value)}
+            placeholder="contoh: anggota_jtd"
+            className="w-full rounded-xl border border-slate-700 bg-slate-950/70 px-4 py-3 text-sm text-white outline-none transition placeholder:text-slate-600 focus:border-cyan-400/70 focus:ring-2 focus:ring-cyan-400/10"
+          />
+          <p className="mt-1.5 text-xs text-slate-500">3–24 karakter: huruf, angka, dan underscore.</p>
+        </div>
         <div>
           <label htmlFor="email" className="mb-2 block text-sm font-medium text-slate-300">Email</label>
           <input
