@@ -16,3 +16,4 @@ pnpm-debug.log*
 
 # PlatformIO
 firmware/.pio/
+firmware/include/secrets.h

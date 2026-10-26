@@ -3,14 +3,7 @@
 #include <WiFiClientSecure.h>
 #include <PubSubClient.h>
 #include <DHT.h>
-
-// Fill these in locally. Never commit real credentials.
-#define WIFI_SSID       "YOUR_WIFI_NAME"
-#define WIFI_PASSWORD   "YOUR_WIFI_PASSWORD"
-#define MQTT_HOST       "d616e0e8.ala.asia-southeast1.emqxsl.com"
-#define MQTT_PORT       8883
-#define MQTT_USERNAME   "YOUR_EMQX_USERNAME"
-#define MQTT_PASSWORD   "YOUR_EMQX_PASSWORD"
+#include "secrets.h" // Copy firmware/include/secrets.example.h and fill it in locally.
 
 #define DHT_PIN         4
 #define DHT_TYPE        DHT22 // Change to DHT11 if that is your sensor.

@@ -4,12 +4,13 @@ ESP32 DHT temperature/humidity reporting and relay control over an EMQX Cloud de
 
 ## Firmware
 
-1. Open `firmware/` with PlatformIO.
-2. Set the Wi-Fi and EMQX username/password values in `firmware/src/main.cpp`.
-3. Set `DHT_PIN`, `DHT_TYPE`, and `RELAY_PIN` for your wiring.
-4. Build and upload to an ESP32.
+1. Install PlatformIO in VS Code, open `firmware/`, and connect the ESP32 by USB.
+2. Copy `include/secrets.example.h` to `include/secrets.h`, then fill in your Wi-Fi and EMQX credentials. The real `secrets.h` is ignored by Git.
+3. Wire DHT11/DHT22 data to GPIO 4 (select `DHT11` or `DHT22` in `src/main.cpp`), VCC to 3V3, and GND to GND. Wire the relay signal to GPIO 2 and use an appropriate external supply for the relay/load.
+4. Confirm the relay module is active-HIGH before connecting a real load. The firmware sets GPIO 2 HIGH for `ON`/`OPEN` and LOW for `OFF`/`CLOSE`.
+5. Build and upload using PlatformIO, then open Serial Monitor at 115200 baud.
 
-The firmware publishes readings every five seconds to `esp32/sensor/temperature` and `esp32/sensor/humidity`, and listens on `esp32/actuator/relay`. It connects to the EMQX Cloud deployment over MQTT/TLS on port `8883`. The current firmware uses `setInsecure()` for a quick test; replace it with the deployment CA certificate for production.
+The firmware publishes readings every five seconds to `jtd/esp32/garasi/suhu` and `jtd/esp32/garasi/kelembapan`, listens on `jtd/esp32/garasi/relay`, and reports health metrics to `jtd/esp32/garasi/metrics`. It connects to EMQX Cloud over MQTT/TLS on port `8883`. The firmware currently uses `setInsecure()` for a prototype; install the EMQX CA certificate and validate TLS before production use.
 
 ## Dashboard
 
@@ -56,6 +57,9 @@ The dashboard connects to `wss://<your-emqx-host>:8084/mqtt`.
 
 | Topic | Direction | Payload |
 | --- | --- | --- |
-| `esp32/sensor/temperature` | ESP32 → dashboard | Temperature in Celsius |
-| `esp32/sensor/humidity` | ESP32 → dashboard | Relative humidity percentage |
-| `esp32/actuator/relay` | Dashboard → ESP32 | `ON` or `OFF` |
+| jtd/esp32/garasi/suhu | ESP32 to dashboard | Temperature in Celsius |
+| jtd/esp32/garasi/kelembapan | ESP32 to dashboard | Relative humidity percentage |
+| jtd/esp32/garasi/metrics | ESP32 to dashboard | JSON device health metrics |
+| jtd/esp32/garasi/relay | Dashboard to ESP32 | ON / OPEN or OFF / CLOSE |
+
+The real ESP32 firmware and dummy simulator are separate MQTT clients. Keep npm run simulate:esp32 available for demos; stop it while running the physical ESP32 on the same topics to avoid mixed telemetry.
