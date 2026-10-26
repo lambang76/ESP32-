@@ -56,7 +56,10 @@ export default function HomePage() {
           </div>
 
           <div className="flex items-center gap-2">
-            <Link href="/login" className="rounded-xl px-3 py-2 text-sm font-medium text-slate-300 transition hover:text-white sm:px-4">
+            <Link href="/panduan" className="rounded-xl px-2 py-2 text-xs font-medium text-cyan-200 transition hover:text-white sm:px-3 sm:text-sm">
+              Panduan
+            </Link>
+            <Link href="/login" className="hidden rounded-xl px-3 py-2 text-sm font-medium text-slate-300 transition hover:text-white sm:inline-flex sm:px-4">
               Masuk
             </Link>
             <Link href="/signup" className="inline-flex items-center gap-2 rounded-xl bg-cyan-400 px-3 py-2 text-sm font-bold text-slate-950 transition hover:bg-cyan-300 sm:px-4">
