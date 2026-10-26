@@ -25,7 +25,7 @@ export default function LoginPage() {
     let active = true;
     void supabase.auth.getSession().then(({ data: { session } }) => {
       if (!active) return;
-      if (session) router.replace("/");
+      if (session) router.replace("/dashboard");
       setCheckingSession(false);
     });
 
@@ -54,7 +54,7 @@ export default function LoginPage() {
       return;
     }
 
-    router.replace("/");
+    router.replace("/dashboard");
     router.refresh();
   }
 
