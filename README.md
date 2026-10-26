@@ -26,7 +26,9 @@ For device selection, also fill in `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_S
 
 ### Login and device-list access
 
-Create team accounts under Supabase **Authentication → Users**. Run `web-dashboard/supabase/auth_policy.sql` in the Supabase SQL Editor to remove the earlier public read policy and allow signed-in users to read the device list. The dashboard now redirects signed-out visitors to `/login` and provides a logout button.
+Enable email signups in Supabase **Authentication → Providers → Email**. The `/signup` page creates member accounts; if email confirmation is enabled, members must confirm the message before login. `/forgot-password` sends a recovery email and `/reset-password` accepts the new password. Add the production URL and local URL (`http://localhost:3000/**`) to Supabase **Authentication → URL Configuration → Redirect URLs**; add the Vercel production and preview URL patterns used by this project too.
+
+Run `web-dashboard/supabase/auth_policy.sql` in the Supabase SQL Editor to remove the earlier public read policy and allow signed-in users to read the device list. The dashboard now redirects signed-out visitors to `/login` and provides a logout button.
 
 ### ESP32 health telemetry
 
