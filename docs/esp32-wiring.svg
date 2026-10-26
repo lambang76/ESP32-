@@ -1,0 +1,77 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1100" height="760" viewBox="0 0 1100 760" role="img" aria-labelledby="title desc">
+  <title id="title">Wiring Smart Garage ESP32, DHT22, and relay</title>
+  <desc id="desc">ESP32 DevKit connects to a DHT22 module on GPIO4 and an active-high relay module on GPIO2. The relay module has a separate 5 volt supply with shared ground. Relay contacts switch an isolated low-voltage load.</desc>
+  <defs>
+    <style>
+      text{font-family:Arial,Helvetica,sans-serif;fill:#e5edf7}.title{font-size:27px;font-weight:700}.sub{font-size:14px;fill:#9fb0c5}.label{font-size:15px;font-weight:600}.pin{font-size:13px}.small{font-size:12px;fill:#a9b7c8}.wireRed{fill:none;stroke:#fb7185;stroke-width:4}.wireYellow{fill:none;stroke:#facc15;stroke-width:4}.wireGreen{fill:none;stroke:#34d399;stroke-width:4}.wireBlack{fill:none;stroke:#94a3b8;stroke-width:4}.wireBlue{fill:none;stroke:#60a5fa;stroke-width:4}.box{fill:#111d2e;stroke:#334155;stroke-width:2}.terminal{fill:#07111e;stroke:#64748b;stroke-width:2}
+    </style>
+  </defs>
+  <rect width="1100" height="700" rx="18" fill="#07111e"/>
+  <text x="36" y="48" class="title">Wiring Diagram · Smart Garage ESP32</text>
+  <text x="36" y="75" class="sub">Sesuai sketch Arduino: DHT_PIN 4 · RELAY_PIN 2 · relay aktif-HIGH</text>
+
+  <!-- ESP32 board -->
+  <rect x="65" y="120" width="280" height="490" rx="24" class="box"/>
+  <text x="205" y="158" text-anchor="middle" class="label">ESP32 Dev Module</text>
+  <rect x="155" y="180" width="100" height="54" rx="12" fill="#1e293b" stroke="#64748b"/>
+  <text x="205" y="213" text-anchor="middle" class="small">USB / 5V input</text>
+  <text x="94" y="280" class="pin">3V3</text><circle cx="325" cy="275" r="6" fill="#fb7185"/>
+  <text x="94" y="345" class="pin">GPIO 4 · DHT DATA</text><circle cx="325" cy="340" r="6" fill="#facc15"/>
+  <text x="94" y="410" class="pin">GPIO 2 · RELAY IN</text><circle cx="325" cy="405" r="6" fill="#34d399"/>
+  <text x="94" y="475" class="pin">GND</text><circle cx="325" cy="470" r="6" fill="#94a3b8"/>
+  <text x="94" y="555" class="small">Jangan suplai kumparan relay</text>
+  <text x="94" y="575" class="small">langsung dari pin GPIO.</text>
+
+  <!-- DHT22 module -->
+  <rect x="520" y="120" width="250" height="175" rx="18" class="box"/>
+  <text x="645" y="158" text-anchor="middle" class="label">Modul DHT22</text>
+  <text x="545" y="200" class="pin">VCC</text><circle cx="535" cy="195" r="5" class="terminal"/>
+  <text x="545" y="240" class="pin">DATA</text><circle cx="535" cy="235" r="5" class="terminal"/>
+  <text x="545" y="280" class="pin">GND</text><circle cx="535" cy="275" r="5" class="terminal"/>
+  <text x="610" y="222" class="small">Pilih DHT11 di kode</text>
+  <text x="610" y="242" class="small">jika memakai DHT11.</text>
+
+  <!-- Relay -->
+  <rect x="500" y="360" width="290" height="205" rx="18" class="box"/>
+  <text x="645" y="395" text-anchor="middle" class="label">Modul Relay 1 Channel</text>
+  <text x="525" y="438" class="pin">IN</text><circle cx="515" cy="433" r="5" class="terminal"/>
+  <text x="525" y="478" class="pin">VCC 5V</text><circle cx="515" cy="473" r="5" class="terminal"/>
+  <text x="525" y="518" class="pin">GND</text><circle cx="515" cy="513" r="5" class="terminal"/>
+  <text x="690" y="447" class="small">Kontak beban:</text>
+  <text x="690" y="470" class="small">COM · NO · NC</text>
+  <text x="735" y="465" text-anchor="end" class="small">COM</text><circle cx="775" cy="475" r="5" class="terminal"/>
+  <text x="735" y="510" text-anchor="end" class="small">NO</text><circle cx="775" cy="505" r="5" class="terminal"/>
+
+  <!-- 5V supply -->
+  <rect x="850" y="355" width="205" height="110" rx="16" class="box"/>
+  <text x="952" y="390" text-anchor="middle" class="label">Catu 5V relay</text>
+  <text x="875" y="425" class="pin">+5V</text><circle cx="860" cy="420" r="5" class="terminal"/>
+  <text x="975" y="425" class="pin">GND</text><circle cx="1045" cy="420" r="5" class="terminal"/>
+
+  <!-- Isolated low-voltage load power circuit -->
+  <rect x="850" y="505" width="205" height="82" rx="16" class="box"/>
+  <text x="952" y="532" text-anchor="middle" class="label">Catu DC beban</text>
+  <text x="875" y="565" class="pin">+V</text><circle cx="860" cy="560" r="5" class="terminal"/>
+  <text x="975" y="565" class="pin">0V</text><circle cx="1045" cy="560" r="5" class="terminal"/>
+  <rect x="850" y="625" width="205" height="70" rx="16" class="box"/>
+  <text x="952" y="654" text-anchor="middle" class="label">Beban DC tegangan rendah</text>
+  <text x="952" y="678" text-anchor="middle" class="small">misal lampu 5–12V</text>
+
+  <!-- Sensor signal wiring -->
+  <path d="M325 275 H420 V195 H535" class="wireRed"/>
+  <path d="M325 340 H450 V235 H535" class="wireYellow"/>
+  <path d="M325 470 H405 V275 H535" class="wireBlack"/>
+  <!-- Relay signal and power wiring -->
+  <path d="M325 405 H445 V433 H515" class="wireGreen"/>
+  <path d="M860 420 H820 V473 H515" class="wireRed"/>
+  <path d="M1045 420 H1070 V655 H450 V513 H515" class="wireBlack"/>
+  <path d="M450 655 H390 V470 H325" class="wireBlack"/>
+  <!-- Isolated relay contact wiring to low-voltage load -->
+  <path d="M860 560 H825 V475 H775" class="wireBlue"/>
+  <path d="M775 505 H805 V660 H850" class="wireBlue"/>
+  <path d="M1045 560 H1080 V710 H825 V680 H850" class="wireBlack"/>
+
+  <!-- Legend / notes -->
+  <rect x="65" y="690" width="430" height="42" rx="10" fill="#0b1726" stroke="#334155"/>
+  <text x="80" y="716" class="small">Merah power · Kuning DATA · Hijau GPIO · Abu GND · Biru kontak relay</text>
+</svg>

@@ -14,6 +14,13 @@ ESP32 DHT temperature/humidity reporting and relay control over an EMQX Cloud de
 
 The firmware publishes readings every five seconds to `jtd/esp32/garasi/suhu` and `jtd/esp32/garasi/kelembapan`, listens on `jtd/esp32/garasi/relay`, and reports health metrics to `jtd/esp32/garasi/metrics`. It connects to EMQX Cloud over MQTT/TLS on port `8883`. The firmware currently uses `setInsecure()` for a prototype; install the EMQX CA certificate and validate TLS before production use.
 
+### Wiring references
+
+- [Wiring diagram](docs/esp32-wiring.svg)
+- [Electrical schematic](docs/esp32-schematic.svg)
+
+Pin map: DHT VCC → ESP32 3V3, DHT DATA → GPIO 4, DHT GND → ESP32 GND; relay IN → GPIO 2, relay VCC → a regulated external 5V supply, relay GND → common GND. Use a relay input that accepts 3.3V logic. For a bare DHT22 (not a breakout module), install a 4.7k–10k pull-up between DATA and 3V3. Use the relay's isolated COM/NO contacts only on a low-voltage gate-controller push-button input; do not connect ESP32 GPIO to a gate motor or mains wiring. GPIO 2 is an ESP32 strapping pin, so if the relay module interferes with boot or flashing, move the relay signal to a suitable non-strapping GPIO and change `RELAY_PIN` in the sketch to match.
+
 ## Dashboard
 
 ```powershell

@@ -1,0 +1,74 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1120" height="720" viewBox="0 0 1120 720" role="img" aria-labelledby="title desc">
+  <title id="title">Electrical schematic for ESP32 Smart Garage</title>
+  <desc id="desc">Schematic nets for ESP32 DevKit, DHT22 sensor, relay module and separate low-voltage load power.</desc>
+  <defs><style>
+    text{font-family:Arial,Helvetica,sans-serif;fill:#e5edf7}.title{font-size:27px;font-weight:700}.label{font-size:16px;font-weight:700}.pin{font-size:14px}.note{font-size:12px;fill:#a9b7c8}.block{fill:#111d2e;stroke:#64748b;stroke-width:2}.net{fill:none;stroke-width:4}.red{stroke:#fb7185}.yellow{stroke:#facc15}.green{stroke:#34d399}.gray{stroke:#94a3b8}.blue{stroke:#60a5fa}.node{fill:#e5edf7}
+  </style></defs>
+  <rect width="1120" height="720" rx="18" fill="#07111e"/>
+  <text x="38" y="48" class="title">Skematik · Smart Garage ESP32</text>
+  <text x="38" y="75" class="note">Net mengacu pada SmartGarageESP32.ino · GPIO2 untuk relay, GPIO4 untuk DHT</text>
+
+  <!-- ESP32 connector / board -->
+  <rect x="70" y="135" width="310" height="470" rx="20" class="block"/>
+  <text x="225" y="175" text-anchor="middle" class="label">U1 · ESP32 Dev Module</text>
+  <text x="105" y="245" class="pin">3V3</text><circle cx="360" cy="240" r="6" class="node"/>
+  <text x="105" y="320" class="pin">GPIO4 · DHT data</text><circle cx="360" cy="315" r="6" class="node"/>
+  <text x="105" y="395" class="pin">GPIO2 · relay control</text><circle cx="360" cy="390" r="6" class="node"/>
+  <text x="105" y="470" class="pin">GND</text><circle cx="360" cy="465" r="6" class="node"/>
+  <text x="105" y="540" class="note">USB 5V powers ESP32 board</text>
+  <text x="105" y="562" class="note">Do not drive relay coil from GPIO.</text>
+
+  <!-- DHT sensor -->
+  <rect x="535" y="145" width="245" height="200" rx="18" class="block"/>
+  <text x="657" y="182" text-anchor="middle" class="label">J1 · DHT22 module</text>
+  <text x="575" y="230" class="pin">VCC</text><circle cx="550" cy="225" r="6" class="node"/>
+  <text x="575" y="280" class="pin">DATA</text><circle cx="550" cy="275" r="6" class="node"/>
+  <text x="575" y="330" class="pin">GND</text><circle cx="550" cy="325" r="6" class="node"/>
+  <text x="645" y="230" class="note">3.3V</text>
+  <text x="645" y="280" class="note">GPIO4</text>
+  <text x="645" y="330" class="note">GND</text>
+
+  <!-- Relay module input -->
+  <rect x="525" y="395" width="295" height="180" rx="18" class="block"/>
+  <text x="672" y="430" text-anchor="middle" class="label">K1 · Relay module 1CH</text>
+  <text x="565" y="480" class="pin">IN</text><circle cx="540" cy="475" r="6" class="node"/>
+  <text x="565" y="520" class="pin">VCC</text><circle cx="540" cy="515" r="6" class="node"/>
+  <text x="565" y="560" class="pin">GND</text><circle cx="540" cy="555" r="6" class="node"/>
+  <text x="660" y="480" class="note">GPIO2 (3.3V logic compatible)</text>
+  <text x="660" y="520" class="note">External regulated 5V</text>
+  <text x="660" y="560" class="note">Common GND with ESP32*</text>
+
+  <!-- Relay supply -->
+  <rect x="890" y="390" width="185" height="115" rx="16" class="block"/>
+  <text x="982" y="425" text-anchor="middle" class="label">PS1 · +5V relay</text>
+  <text x="920" y="470" class="pin">+5V</text><circle cx="900" cy="465" r="6" class="node"/>
+  <text x="1000" y="470" class="pin">GND</text><circle cx="1065" cy="465" r="6" class="node"/>
+
+  <!-- Relay contacts and isolated load circuit -->
+  <rect x="835" y="145" width="240" height="175" rx="18" class="block"/>
+  <text x="955" y="180" text-anchor="middle" class="label">K1 contacts</text>
+  <text x="865" y="225" class="pin">COM</text>
+  <circle cx="930" cy="220" r="6" class="node"/>
+  <text x="865" y="270" class="pin">NO</text>
+  <circle cx="930" cy="265" r="6" class="node"/>
+  <text x="865" y="300" class="note">NC unused (default open)</text>
+  <rect x="835" y="545" width="240" height="105" rx="16" class="block"/>
+  <text x="955" y="575" text-anchor="middle" class="label">PS2 + DC load</text>
+  <text x="855" y="607" class="note">PS2 + → COM, NO → load +</text>
+  <text x="855" y="630" class="note">load − → PS2 0V (isolated)</text>
+
+  <!-- Nets -->
+  <path d="M360 240 H450 V225 H550" class="net red"/>
+  <path d="M360 315 H480 V275 H550" class="net yellow"/>
+  <path d="M360 465 H450 V325 H550" class="net gray"/>
+  <path d="M360 390 H455 V475 H540" class="net green"/>
+  <path d="M900 465 H860 V515 H540" class="net red"/>
+  <path d="M1065 465 H1090 V675 H455 V555 H540" class="net gray"/>
+  <path d="M455 675 H420 V465 H360" class="net gray"/>
+  <!-- Load contacts are isolated from ESP32 and relay coil supply -->
+  <path d="M855 607 H800 V220 H930" class="net blue"/>
+  <path d="M930 265 H810 V630 H855" class="net blue"/>
+  <text x="70" y="660" class="note">* Common ground is needed by typical non-isolated relay modules. Follow the module's IN/VCC/GND specification.</text>
+  <text x="70" y="684" class="note">Use a 3.3V-compatible relay input module. For a bare DHT22, add 4.7k–10k pull-up from DATA to 3V3.</text>
+</svg>
+
