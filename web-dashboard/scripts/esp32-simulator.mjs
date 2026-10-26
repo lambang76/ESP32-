@@ -31,6 +31,7 @@ if (!host || !username || !password) {
 const GARAGE_TOPIC = "jtd/esp32/garasi";
 const TEMP_TOPIC = `${GARAGE_TOPIC}/suhu`;
 const HUMIDITY_TOPIC = `${GARAGE_TOPIC}/kelembapan`;
+const METRICS_TOPIC = `${GARAGE_TOPIC}/metrics`;
 const DOOR_TOPIC = `${GARAGE_TOPIC}/pintu`;
 const RFID_TOPIC = `${GARAGE_TOPIC}/rfid`;
 const RELAY_TOPIC = `${GARAGE_TOPIC}/relay`;
@@ -47,6 +48,7 @@ const client = mqtt.connect(`mqtts://${host}:8883`, {
 let temperature = 25.0;
 let humidity = 58.0;
 let doorOpen = false;
+const simulatorStartedAt = Date.now();
 
 client.on("connect", () => {
   console.log("ESP32 simulator connected to your EMQX Cloud deployment over MQTT/TLS");
@@ -101,7 +103,20 @@ function publishReadings() {
 
   client.publish(TEMP_TOPIC, tempValue);
   client.publish(HUMIDITY_TOPIC, humidityValue);
+  const freeHeapBytes = 182_000 + Math.floor(Math.random() * 12_000);
+  const metrics = {
+    free_heap_bytes: freeHeapBytes,
+    total_heap_bytes: 327_680,
+    min_free_heap_bytes: freeHeapBytes - 8_000,
+    app_loop_load_percent: Number((4 + Math.random() * 18).toFixed(1)),
+    cpu_freq_mhz: 240,
+    uptime_seconds: Math.floor((Date.now() - simulatorStartedAt) / 1000),
+    wifi_rssi_dbm: -38 - Math.floor(Math.random() * 35),
+    flash_size_bytes: 4_194_304,
+  };
+  client.publish(METRICS_TOPIC, JSON.stringify(metrics));
   console.log(`Published temperature ${tempValue} °C, humidity ${humidityValue}%`);
+  console.log(`Published device metrics to ${METRICS_TOPIC}`);
   publishDoorState();
 }
 

@@ -17,20 +17,25 @@
 #define RELAY_PIN       2
 
 constexpr unsigned long SENSOR_INTERVAL_MS = 5000;
+constexpr unsigned long METRICS_INTERVAL_MS = 5000;
 constexpr unsigned long WIFI_RETRY_MS = 5000;
 constexpr unsigned long MQTT_RETRY_MS = 5000;
 
-const char* TEMP_TOPIC = "esp32/sensor/temperature";
-const char* HUMIDITY_TOPIC = "esp32/sensor/humidity";
-const char* RELAY_TOPIC = "esp32/actuator/relay";
+const char* TEMP_TOPIC = "jtd/esp32/garasi/suhu";
+const char* HUMIDITY_TOPIC = "jtd/esp32/garasi/kelembapan";
+const char* METRICS_TOPIC = "jtd/esp32/garasi/metrics";
+const char* RELAY_TOPIC = "jtd/esp32/garasi/relay";
 
 DHT dht(DHT_PIN, DHT_TYPE);
 WiFiClientSecure secureClient;
 PubSubClient mqttClient(secureClient);
 
 unsigned long lastSensorReadMs = 0;
+unsigned long lastMetricsReadMs = 0;
 unsigned long lastWifiAttemptMs = 0;
 unsigned long lastMqttAttemptMs = 0;
+unsigned long cpuWindowStartedMs = 0;
+uint64_t appLoopBusyUs = 0;
 
 void onMqttMessage(char* topic, byte* payload, unsigned int length) {
   if (strcmp(topic, RELAY_TOPIC) != 0) return;
@@ -44,9 +49,9 @@ void onMqttMessage(char* topic, byte* payload, unsigned int length) {
   command.trim();
   command.toUpperCase();
 
-  if (command == "ON") {
+  if (command == "ON" || command == "OPEN") {
     digitalWrite(RELAY_PIN, HIGH);
-  } else if (command == "OFF") {
+  } else if (command == "OFF" || command == "CLOSE") {
     digitalWrite(RELAY_PIN, LOW);
   }
 }
@@ -86,6 +91,7 @@ void setup() {
 
   dht.begin();
   WiFi.mode(WIFI_STA);
+  cpuWindowStartedMs = millis();
 
   // For a quick test only. For production, use secureClient.setCACert()
   // with the CA certificate downloaded from the EMQX deployment page.
@@ -93,36 +99,67 @@ void setup() {
 
   mqttClient.setServer(MQTT_HOST, MQTT_PORT);
   mqttClient.setCallback(onMqttMessage);
-  mqttClient.setBufferSize(256);
+  mqttClient.setBufferSize(512);
 }
 
 void loop() {
+  const uint32_t loopStartedUs = micros();
   connectWiFi();
   connectMqtt();
   mqttClient.loop();
 
   const unsigned long now = millis();
-  if (now - lastSensorReadMs < SENSOR_INTERVAL_MS) return;
-  lastSensorReadMs = now;
+  if (now - lastSensorReadMs >= SENSOR_INTERVAL_MS) {
+    lastSensorReadMs = now;
 
-  const float temperature = dht.readTemperature(); // Celsius
-  const float humidity = dht.readHumidity();
+    const float temperature = dht.readTemperature(); // Celsius
+    const float humidity = dht.readHumidity();
 
-  if (isnan(temperature) || isnan(humidity)) {
-    Serial.println("DHT read failed");
-    return;
+    if (isnan(temperature) || isnan(humidity)) {
+      Serial.println("DHT read failed");
+    } else {
+      Serial.printf("Temperature: %.1f C, Humidity: %.1f%%\n",
+                    temperature, humidity);
+
+      if (mqttClient.connected()) {
+        char tempPayload[16];
+        char humidityPayload[16];
+        snprintf(tempPayload, sizeof(tempPayload), "%.1f", temperature);
+        snprintf(humidityPayload, sizeof(humidityPayload), "%.1f", humidity);
+        mqttClient.publish(TEMP_TOPIC, tempPayload);
+        mqttClient.publish(HUMIDITY_TOPIC, humidityPayload);
+      }
+    }
   }
 
-  Serial.printf("Temperature: %.1f C, Humidity: %.1f%%\n",
-                temperature, humidity);
+  if (now - lastMetricsReadMs >= METRICS_INTERVAL_MS) {
+    lastMetricsReadMs = now;
+    const unsigned long windowMs = now - cpuWindowStartedMs;
+    float appLoopLoadPercent = windowMs > 0
+        ? (static_cast<float>(appLoopBusyUs) / (windowMs * 1000.0f)) * 100.0f
+        : 0.0f;
+    if (appLoopLoadPercent > 100.0f) appLoopLoadPercent = 100.0f;
+    appLoopBusyUs = 0;
+    cpuWindowStartedMs = now;
 
-  if (!mqttClient.connected()) return;
+    if (mqttClient.connected()) {
+      char metricsPayload[320];
+      snprintf(
+          metricsPayload,
+          sizeof(metricsPayload),
+          "{\"free_heap_bytes\":%u,\"total_heap_bytes\":%u,\"min_free_heap_bytes\":%u,\"app_loop_load_percent\":%.1f,\"cpu_freq_mhz\":%u,\"uptime_seconds\":%lu,\"wifi_rssi_dbm\":%d,\"flash_size_bytes\":%u}",
+          static_cast<unsigned int>(ESP.getFreeHeap()),
+          static_cast<unsigned int>(ESP.getHeapSize()),
+          static_cast<unsigned int>(ESP.getMinFreeHeap()),
+          appLoopLoadPercent,
+          static_cast<unsigned int>(ESP.getCpuFreqMHz()),
+          static_cast<unsigned long>(now / 1000UL),
+          static_cast<int>(WiFi.RSSI()),
+          static_cast<unsigned int>(ESP.getFlashChipSize()));
+      mqttClient.publish(METRICS_TOPIC, metricsPayload);
+    }
+  }
 
-  char tempPayload[16];
-  char humidityPayload[16];
-  snprintf(tempPayload, sizeof(tempPayload), "%.1f", temperature);
-  snprintf(humidityPayload, sizeof(humidityPayload), "%.1f", humidity);
-
-  mqttClient.publish(TEMP_TOPIC, tempPayload);
-  mqttClient.publish(HUMIDITY_TOPIC, humidityPayload);
+  appLoopBusyUs += static_cast<uint32_t>(micros() - loopStartedUs);
+  delay(1); // Yield to FreeRTOS; loop-load telemetry is an estimate.
 }

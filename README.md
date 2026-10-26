@@ -24,6 +24,14 @@ Fill in `.env.local` with the EMQX username and password created under **Access 
 
 For device selection, also fill in `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY`. The Supabase project needs a `devices` table with `id`, `device_name`, `device_type`, `topic_sub`, and `topic_pub` columns, plus a Row Level Security policy that allows the dashboard to read the intended device rows. Add these variables to Vercel as well.
 
+### Login and device-list access
+
+Create team accounts under Supabase **Authentication → Users**. Run `web-dashboard/supabase/auth_policy.sql` in the Supabase SQL Editor to remove the earlier public read policy and allow signed-in users to read the device list. The dashboard now redirects signed-out visitors to `/login` and provides a logout button.
+
+### ESP32 health telemetry
+
+The dashboard reads a JSON metrics payload from `jtd/esp32/garasi/metrics`. The firmware and dummy simulator publish free/total/minimum heap, estimated Arduino loop load, CPU clock, uptime, and Wi-Fi RSSI. The displayed loop-load percentage is an estimate of the Arduino application loop's busy time, not a measurement of all ESP32 FreeRTOS tasks.
+
 ### Test without an ESP32
 
 Open one terminal in `web-dashboard/` and run `npm run dev` for the dashboard. In a second terminal in the same folder, run:

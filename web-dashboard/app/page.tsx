@@ -1,14 +1,20 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import mqtt, { type MqttClient } from "mqtt";
 import {
   Activity,
   ChevronDown,
+  Clock3,
+  Cpu,
   DoorClosed,
   DoorOpen,
+  HardDrive,
   KeyRound,
+  LogOut,
   Power,
+  Signal,
   Terminal,
   Thermometer,
   Wifi,
@@ -33,15 +39,61 @@ interface TerminalEntry {
 
 type DoorState = "open" | "closed" | null;
 
+interface DeviceMetrics {
+  freeHeapBytes: number | null;
+  totalHeapBytes: number | null;
+  minFreeHeapBytes: number | null;
+  cpuUsagePercent: number | null;
+  cpuFrequencyMHz: number | null;
+  uptimeSeconds: number | null;
+  wifiRssiDbm: number | null;
+  flashSizeBytes: number | null;
+}
+
+const EMPTY_METRICS: DeviceMetrics = {
+  freeHeapBytes: null,
+  totalHeapBytes: null,
+  minFreeHeapBytes: null,
+  cpuUsagePercent: null,
+  cpuFrequencyMHz: null,
+  uptimeSeconds: null,
+  wifiRssiDbm: null,
+  flashSizeBytes: null,
+};
+
 const MAX_TERMINAL_ENTRIES = 40;
 
+function readNumericField(values: Record<string, unknown>, ...keys: string[]) {
+  const rawValue = keys.map((key) => values[key]).find((value) => value !== undefined && value !== null);
+  if (rawValue === undefined) return null;
+  const value = Number(rawValue);
+  return Number.isFinite(value) ? value : null;
+}
+
+function formatBytes(value: number | null) {
+  if (value === null) return "--";
+  if (value < 1024) return `${Math.round(value)} B`;
+  return `${(value / 1024).toFixed(1)} KB`;
+}
+
+function formatUptime(value: number | null) {
+  if (value === null) return "--";
+  const days = Math.floor(value / 86_400);
+  const hours = Math.floor((value % 86_400) / 3_600);
+  const minutes = Math.floor((value % 3_600) / 60);
+  return days > 0 ? `${days}d ${hours}h` : hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
+}
+
 export default function DashboardPage() {
+  const router = useRouter();
   const clientRef = useRef<MqttClient | null>(null);
   const subscribedTopicRef = useRef<string | null>(null);
   const subscriptionGenerationRef = useRef(0);
   const logEndRef = useRef<HTMLDivElement | null>(null);
 
   const [connection, setConnection] = useState("Connecting");
+  const [authChecked, setAuthChecked] = useState(false);
+  const [authenticated, setAuthenticated] = useState(false);
   const [mqttConnected, setMqttConnected] = useState(false);
   const [devices, setDevices] = useState<Device[]>([]);
   const [selectedDevice, setSelectedDevice] = useState<Device | null>(null);
@@ -51,6 +103,7 @@ export default function DashboardPage() {
   const [rfidValue, setRfidValue] = useState<string | null>(null);
   const [temperature, setTemperature] = useState<number | null>(null);
   const [humidity, setHumidity] = useState<number | null>(null);
+  const [deviceMetrics, setDeviceMetrics] = useState<DeviceMetrics>(EMPTY_METRICS);
   const [lastCommand, setLastCommand] = useState<string | null>(null);
   const [terminalEntries, setTerminalEntries] = useState<TerminalEntry[]>([]);
 
@@ -65,11 +118,46 @@ export default function DashboardPage() {
   }, []);
 
   useEffect(() => {
+    if (!supabase) {
+      setAuthChecked(true);
+      return;
+    }
+
+    let active = true;
+    const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!active) return;
+      const hasSession = Boolean(session);
+      setAuthenticated(hasSession);
+      setAuthChecked(true);
+      if (!hasSession) router.replace("/login");
+    });
+
+    void supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!active) return;
+      const hasSession = Boolean(session);
+      setAuthenticated(hasSession);
+      setAuthChecked(true);
+      if (!hasSession) router.replace("/login");
+    });
+
+    return () => {
+      active = false;
+      authListener.subscription.unsubscribe();
+    };
+  }, [router]);
+
+  useEffect(() => {
     let cancelled = false;
 
     async function fetchDevices() {
+      if (!authChecked) return;
       setDevicesLoading(true);
       setDeviceError(null);
+
+      if (!authenticated) {
+        setDevicesLoading(false);
+        return;
+      }
 
       if (!supabase) {
         setDeviceError("Konfigurasi Supabase belum diisi.");
@@ -105,9 +193,11 @@ export default function DashboardPage() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [authChecked, authenticated]);
 
   useEffect(() => {
+    if (!authChecked || !authenticated) return;
+
     const host = process.env.NEXT_PUBLIC_EMQX_HOST;
     const username = process.env.NEXT_PUBLIC_EMQX_USERNAME;
     const password = process.env.NEXT_PUBLIC_EMQX_PASSWORD;
@@ -176,6 +266,36 @@ export default function DashboardPage() {
         if (Number.isFinite(numericHumidity)) setHumidity(numericHumidity);
       }
 
+      if (values) {
+        const freeHeapBytes = readNumericField(values, "free_heap_bytes", "freeHeapBytes", "free_heap");
+        const totalHeapBytes = readNumericField(values, "total_heap_bytes", "totalHeapBytes", "total_heap");
+        const minFreeHeapBytes = readNumericField(values, "min_free_heap_bytes", "minFreeHeapBytes");
+        const cpuUsagePercent = readNumericField(
+          values,
+          "cpu_usage_percent",
+          "cpuUsagePercent",
+          "app_loop_load_percent",
+          "appLoopLoadPercent",
+        );
+        const cpuFrequencyMHz = readNumericField(values, "cpu_freq_mhz", "cpuFrequencyMHz", "cpu_freq");
+        const uptimeSeconds = readNumericField(values, "uptime_seconds", "uptimeSeconds");
+        const wifiRssiDbm = readNumericField(values, "wifi_rssi_dbm", "wifiRssiDbm", "wifi_rssi");
+        const flashSizeBytes = readNumericField(values, "flash_size_bytes", "flashSizeBytes");
+
+        if ([freeHeapBytes, totalHeapBytes, minFreeHeapBytes, cpuUsagePercent, cpuFrequencyMHz, uptimeSeconds, wifiRssiDbm, flashSizeBytes].some((value) => value !== null)) {
+          setDeviceMetrics((current) => ({
+            freeHeapBytes: freeHeapBytes ?? current.freeHeapBytes,
+            totalHeapBytes: totalHeapBytes ?? current.totalHeapBytes,
+            minFreeHeapBytes: minFreeHeapBytes ?? current.minFreeHeapBytes,
+            cpuUsagePercent: cpuUsagePercent ?? current.cpuUsagePercent,
+            cpuFrequencyMHz: cpuFrequencyMHz ?? current.cpuFrequencyMHz,
+            uptimeSeconds: uptimeSeconds ?? current.uptimeSeconds,
+            wifiRssiDbm: wifiRssiDbm ?? current.wifiRssiDbm,
+            flashSizeBytes: flashSizeBytes ?? current.flashSizeBytes,
+          }));
+        }
+      }
+
       if (suffix === "pintu") {
         const stateValue = String(values?.state ?? values?.pintu ?? payload).trim().toUpperCase();
         if (stateValue.includes("OPEN") || stateValue.includes("BUKA") || ["ON", "1", "TRUE"].includes(stateValue)) {
@@ -197,7 +317,7 @@ export default function DashboardPage() {
       clientRef.current = null;
       client.end(true);
     };
-  }, [appendLog]);
+  }, [authChecked, authenticated, appendLog]);
 
   useEffect(() => {
     const client = clientRef.current;
@@ -212,6 +332,7 @@ export default function DashboardPage() {
     setRfidValue(null);
     setTemperature(null);
     setHumidity(null);
+    setDeviceMetrics(EMPTY_METRICS);
     setLastCommand(null);
 
     const subscribeToSelectedDevice = () => {
@@ -267,8 +388,32 @@ export default function DashboardPage() {
     });
   }
 
+  async function logout() {
+    if (supabase) await supabase.auth.signOut();
+    router.replace("/login");
+    router.refresh();
+  }
+
+  if (!authChecked || !authenticated) {
+    return (
+      <main className="grid min-h-screen place-items-center bg-[#07111e] px-5 text-slate-100">
+        <div className="rounded-2xl border border-white/10 bg-slate-900/80 px-6 py-5 text-center shadow-2xl">
+          <div className="mx-auto mb-3 h-8 w-8 animate-spin rounded-full border-2 border-cyan-300/20 border-t-cyan-300" />
+          <p className="text-sm text-slate-300">{supabase ? "Memeriksa sesi login..." : "Konfigurasi Supabase belum tersedia."}</p>
+          {!supabase && <a className="mt-3 inline-block text-sm text-cyan-300 hover:text-cyan-200" href="/login">Buka halaman login</a>}
+        </div>
+      </main>
+    );
+  }
+
   const isConnected = connection === "Connected";
   const DoorIcon = doorState === "open" ? DoorOpen : DoorClosed;
+  const usedHeapBytes = deviceMetrics.totalHeapBytes !== null && deviceMetrics.freeHeapBytes !== null
+    ? Math.max(0, deviceMetrics.totalHeapBytes - deviceMetrics.freeHeapBytes)
+    : null;
+  const ramUsagePercent = deviceMetrics.totalHeapBytes && usedHeapBytes !== null
+    ? Math.min(100, (usedHeapBytes / deviceMetrics.totalHeapBytes) * 100)
+    : null;
 
   return (
     <main className="relative min-h-screen overflow-hidden bg-[#07111e] text-slate-100">
@@ -290,16 +435,25 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          <div
-            className={`inline-flex w-fit items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-medium sm:px-4 sm:py-2 sm:text-sm ${
-              isConnected
-                ? "border-emerald-400/20 bg-emerald-400/10 text-emerald-300"
-                : "border-rose-400/20 bg-rose-400/10 text-rose-300"
-            }`}
-          >
-            {isConnected ? <Wifi size={16} /> : <WifiOff size={16} />}
-            <span className="h-2 w-2 rounded-full bg-current shadow-[0_0_10px_currentColor]" />
-            MQTT {connection}
+          <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+            <div
+              className={`inline-flex w-fit items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-medium sm:px-4 sm:py-2 sm:text-sm ${
+                isConnected
+                  ? "border-emerald-400/20 bg-emerald-400/10 text-emerald-300"
+                  : "border-rose-400/20 bg-rose-400/10 text-rose-300"
+              }`}
+            >
+              {isConnected ? <Wifi size={16} /> : <WifiOff size={16} />}
+              <span className="h-2 w-2 rounded-full bg-current shadow-[0_0_10px_currentColor]" />
+              MQTT {connection}
+            </div>
+            <button
+              type="button"
+              onClick={logout}
+              className="inline-flex items-center gap-2 rounded-full border border-slate-700 bg-slate-900/70 px-3 py-1.5 text-xs font-medium text-slate-300 transition hover:border-slate-500 hover:text-white sm:px-4 sm:py-2 sm:text-sm"
+            >
+              <LogOut size={15} /> Keluar
+            </button>
           </div>
         </div>
       </header>
@@ -415,6 +569,83 @@ export default function DashboardPage() {
               <span className="font-semibold text-cyan-100">{humidity === null ? "--" : `${humidity.toFixed(1)}%`}</span>
             </div>
           </article>
+        </section>
+
+        <section className="mt-5" aria-label="ESP32 device resource usage">
+          <div className="mb-3 flex items-end justify-between gap-3">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-cyan-300">Performa perangkat</p>
+              <h3 className="mt-1 text-lg font-semibold">ESP32 health & resources</h3>
+            </div>
+            <span className="hidden text-xs text-slate-500 sm:block">Diperbarui lewat MQTT telemetry</span>
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+            <article className="rounded-2xl border border-slate-700/70 bg-slate-900/65 p-4 shadow-lg shadow-black/10 backdrop-blur-xl sm:p-5">
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-slate-400">RAM terpakai</span>
+                <HardDrive size={18} className="text-cyan-300" />
+              </div>
+              <p className="mt-3 text-2xl font-semibold">
+                {ramUsagePercent === null ? "--" : `${ramUsagePercent.toFixed(0)}%`}
+              </p>
+              <div className="mt-3 h-2 overflow-hidden rounded-full bg-slate-800">
+                <div
+                  className="h-full rounded-full bg-gradient-to-r from-cyan-400 to-blue-500 transition-all"
+                  style={{ width: `${ramUsagePercent ?? 0}%` }}
+                />
+              </div>
+              <p className="mt-2 text-xs text-slate-500">
+                {formatBytes(usedHeapBytes)} / {formatBytes(deviceMetrics.totalHeapBytes)}
+                {deviceMetrics.minFreeHeapBytes !== null && ` · min bebas ${formatBytes(deviceMetrics.minFreeHeapBytes)}`}
+              </p>
+            </article>
+
+            <article className="rounded-2xl border border-slate-700/70 bg-slate-900/65 p-4 shadow-lg shadow-black/10 backdrop-blur-xl sm:p-5">
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-slate-400">CPU / loop load</span>
+                <Cpu size={18} className="text-violet-300" />
+              </div>
+              <p className="mt-3 text-2xl font-semibold">
+                {deviceMetrics.cpuUsagePercent === null ? "--" : `${deviceMetrics.cpuUsagePercent.toFixed(0)}%`}
+              </p>
+              <p className="mt-2 text-xs text-slate-500">
+                {deviceMetrics.cpuFrequencyMHz === null ? "Clock -- MHz" : `Clock ${deviceMetrics.cpuFrequencyMHz} MHz`}
+                {" · estimasi beban loop"}
+              </p>
+            </article>
+
+            <article className="rounded-2xl border border-slate-700/70 bg-slate-900/65 p-4 shadow-lg shadow-black/10 backdrop-blur-xl sm:p-5">
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-slate-400">Uptime</span>
+                <Clock3 size={18} className="text-amber-300" />
+              </div>
+              <p className="mt-3 text-2xl font-semibold">{formatUptime(deviceMetrics.uptimeSeconds)}</p>
+              <p className="mt-2 text-xs text-slate-500">
+                {deviceMetrics.uptimeSeconds === null ? "Menunggu telemetry" : `${deviceMetrics.uptimeSeconds.toLocaleString("id-ID")} detik sejak boot`}
+              </p>
+            </article>
+
+            <article className="rounded-2xl border border-slate-700/70 bg-slate-900/65 p-4 shadow-lg shadow-black/10 backdrop-blur-xl sm:p-5">
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-slate-400">Sinyal Wi-Fi</span>
+                <Signal size={18} className="text-emerald-300" />
+              </div>
+              <p className="mt-3 text-2xl font-semibold">
+                {deviceMetrics.wifiRssiDbm === null ? "--" : `${deviceMetrics.wifiRssiDbm} dBm`}
+              </p>
+              <p className="mt-2 text-xs text-slate-500">Kekuatan koneksi ESP32 ke router</p>
+            </article>
+
+            <article className="rounded-2xl border border-slate-700/70 bg-slate-900/65 p-4 shadow-lg shadow-black/10 backdrop-blur-xl sm:p-5">
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-slate-400">Flash onboard</span>
+                <HardDrive size={18} className="text-slate-300" />
+              </div>
+              <p className="mt-3 text-2xl font-semibold">{formatBytes(deviceMetrics.flashSizeBytes)}</p>
+              <p className="mt-2 text-xs text-slate-500">Kapasitas chip flash</p>
+            </article>
+          </div>
         </section>
 
         <section className="mt-4 grid gap-4 lg:mt-5 lg:grid-cols-[1.1fr_0.9fr] lg:gap-5">
