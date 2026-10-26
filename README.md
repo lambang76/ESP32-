@@ -32,6 +32,10 @@ Enable email signups in Supabase **Authentication → Providers → Email**. The
 
 Run `web-dashboard/supabase/auth_policy.sql` in the Supabase SQL Editor to remove the earlier public read policy and allow signed-in users to read the device list. The dashboard now redirects signed-out visitors to `/login` and provides a logout button.
 
+### Member discussion forum
+
+Run `web-dashboard/supabase/forum.sql` in the Supabase SQL Editor to create the forum post/reply tables and authenticated-only RLS policies. The forum is available at `/forum` after login; members can create categorized discussions and reply.
+
 ### ESP32 health telemetry
 
 The dashboard reads a JSON metrics payload from `jtd/esp32/garasi/metrics`. The firmware and dummy simulator publish free/total/minimum heap, estimated Arduino loop load, CPU clock, uptime, and Wi-Fi RSSI. The displayed loop-load percentage is an estimate of the Arduino application loop's busy time, not a measurement of all ESP32 FreeRTOS tasks.

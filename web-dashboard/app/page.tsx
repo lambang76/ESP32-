@@ -53,9 +53,13 @@ export default function HomePage() {
           <div className="hidden items-center gap-7 text-sm text-slate-400 md:flex">
             <a href="#fitur" className="transition hover:text-white">Fitur</a>
             <a href="#cara-kerja" className="transition hover:text-white">Cara kerja</a>
+            <Link href="/forum" className="transition hover:text-white">Forum</Link>
           </div>
 
           <div className="flex items-center gap-2">
+            <Link href="/forum" className="rounded-xl px-2 py-2 text-xs font-medium text-slate-300 transition hover:text-cyan-200 sm:px-3 sm:text-sm md:hidden">
+              Forum
+            </Link>
             <Link href="/panduan" className="rounded-xl px-2 py-2 text-xs font-medium text-cyan-200 transition hover:text-white sm:px-3 sm:text-sm">
               Panduan
             </Link>
