@@ -22,6 +22,8 @@ npm run dev
 
 Fill in `.env.local` with the EMQX username and password created under **Access Control → Authentication**. Set the same variables in Vercel before deployment. The `NEXT_PUBLIC_` credentials are visible in browser code, so use a dedicated account with only the permissions needed for these topics.
 
+For device selection, also fill in `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY`. The Supabase project needs a `devices` table with `id`, `device_name`, `device_type`, `topic_sub`, and `topic_pub` columns, plus a Row Level Security policy that allows the dashboard to read the intended device rows. Add these variables to Vercel as well.
+
 ### Test without an ESP32
 
 Open one terminal in `web-dashboard/` and run `npm run dev` for the dashboard. In a second terminal in the same folder, run:

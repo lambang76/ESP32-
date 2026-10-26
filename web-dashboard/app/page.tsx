@@ -2,17 +2,72 @@
 
 import { useEffect, useRef, useState } from "react";
 import mqtt, { type MqttClient } from "mqtt";
+import { supabase } from "@/lib/supabaseClient";
 
-const TEMP_TOPIC = "esp32/sensor/temperature";
-const HUMIDITY_TOPIC = "esp32/sensor/humidity";
-const RELAY_TOPIC = "esp32/actuator/relay";
+interface Device {
+  id: string | number;
+  device_name: string;
+  device_type: string;
+  topic_sub: string;
+  topic_pub: string;
+}
 
 export default function DashboardPage() {
   const clientRef = useRef<MqttClient | null>(null);
+  const subscribedTopicRef = useRef<string | null>(null);
+  const subscriptionGenerationRef = useRef(0);
   const [connection, setConnection] = useState("Connecting");
+  const [mqttConnected, setMqttConnected] = useState(false);
+  const [devices, setDevices] = useState<Device[]>([]);
+  const [selectedDevice, setSelectedDevice] = useState<Device | null>(null);
+  const [devicesLoading, setDevicesLoading] = useState(true);
+  const [deviceError, setDeviceError] = useState<string | null>(null);
   const [temperature, setTemperature] = useState<number | null>(null);
   const [humidity, setHumidity] = useState<number | null>(null);
   const [relayOn, setRelayOn] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function fetchDevices() {
+      setDevicesLoading(true);
+      setDeviceError(null);
+
+      if (!supabase) {
+        setDeviceError("Missing Supabase configuration");
+        setDevicesLoading(false);
+        return;
+      }
+
+      try {
+        const { data, error } = await supabase
+          .from("devices")
+          .select("id, device_name, device_type, topic_sub, topic_pub");
+
+        if (cancelled) return;
+        if (error) {
+          setDeviceError(error.message);
+          setDevices([]);
+        } else {
+          const fetchedDevices = (data ?? []) as Device[];
+          setDevices(fetchedDevices);
+          setSelectedDevice(fetchedDevices[0] ?? null);
+        }
+      } catch (error) {
+        if (!cancelled) {
+          setDeviceError(error instanceof Error ? error.message : "Could not load devices");
+          setDevices([]);
+        }
+      } finally {
+        if (!cancelled) setDevicesLoading(false);
+      }
+    }
+
+    void fetchDevices();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     const host = process.env.NEXT_PUBLIC_EMQX_HOST;
@@ -36,18 +91,45 @@ export default function DashboardPage() {
 
     client.on("connect", () => {
       setConnection("Connected");
-      client.subscribe([TEMP_TOPIC, HUMIDITY_TOPIC], (error) => {
-        if (error) setConnection("Subscription failed");
-      });
+      subscribedTopicRef.current = null;
+      setMqttConnected(true);
     });
     client.on("reconnect", () => setConnection("Reconnecting"));
-    client.on("offline", () => setConnection("Offline"));
+    client.on("offline", () => {
+      setConnection("Offline");
+      setMqttConnected(false);
+    });
+    client.on("close", () => setMqttConnected(false));
     client.on("error", () => setConnection("Connection error"));
     client.on("message", (topic, message) => {
-      const value = Number(message.toString());
+      const payload = message.toString();
+
+      try {
+        const parsed: unknown = JSON.parse(payload);
+        if (parsed && typeof parsed === "object") {
+          const values = parsed as Record<string, unknown>;
+          const temp = Number(values.temperature ?? values.temp);
+          const hum = Number(values.humidity ?? values.hum);
+          if (Number.isFinite(temp)) setTemperature(temp);
+          if (Number.isFinite(hum)) setHumidity(hum);
+          return;
+        }
+      } catch {
+        // Plain numeric sensor payloads are handled below.
+      }
+
+      const value = Number(payload);
       if (!Number.isFinite(value)) return;
-      if (topic === TEMP_TOPIC) setTemperature(value);
-      if (topic === HUMIDITY_TOPIC) setHumidity(value);
+
+      const normalizedTopic = topic.toLowerCase();
+      if (normalizedTopic.includes("temperature") || normalizedTopic.includes("/temp")) {
+        setTemperature(value);
+      } else if (normalizedTopic.includes("humidity") || normalizedTopic.includes("/hum")) {
+        setHumidity(value);
+      } else {
+        // A device may publish one numeric reading on its configured topic.
+        setTemperature(value);
+      }
     });
 
     return () => {
@@ -56,12 +138,56 @@ export default function DashboardPage() {
     };
   }, []);
 
-  function toggleRelay() {
+  useEffect(() => {
     const client = clientRef.current;
     if (!client?.connected) return;
 
+    const nextTopic = selectedDevice?.topic_sub.trim() || null;
+    const previousTopic = subscribedTopicRef.current;
+    if (nextTopic === previousTopic) return;
+    const generation = ++subscriptionGenerationRef.current;
+
+    setTemperature(null);
+    setHumidity(null);
+    setRelayOn(false);
+
+    const subscribeToSelectedDevice = () => {
+      if (generation !== subscriptionGenerationRef.current) return;
+      if (!nextTopic) {
+        subscribedTopicRef.current = null;
+        return;
+      }
+
+      client.subscribe(nextTopic, (error) => {
+        if (generation !== subscriptionGenerationRef.current) {
+          client.unsubscribe(nextTopic);
+          return;
+        }
+        if (error) {
+          setConnection("Subscription failed");
+        } else {
+          subscribedTopicRef.current = nextTopic;
+        }
+      });
+    };
+
+    if (previousTopic) {
+      client.unsubscribe(previousTopic, (error) => {
+        if (generation !== subscriptionGenerationRef.current) return;
+        if (error) setConnection("Unsubscribe failed");
+        subscribeToSelectedDevice();
+      });
+    } else {
+      subscribeToSelectedDevice();
+    }
+  }, [selectedDevice, mqttConnected]);
+
+  function toggleRelay() {
+    const client = clientRef.current;
+    if (!client?.connected || !selectedDevice?.topic_pub.trim()) return;
+
     const command = relayOn ? "OFF" : "ON";
-    client.publish(RELAY_TOPIC, command, { qos: 1 }, (error) => {
+    client.publish(selectedDevice.topic_pub, command, { qos: 1 }, (error) => {
       if (!error) setRelayOn(command === "ON");
     });
   }
@@ -79,6 +205,33 @@ export default function DashboardPage() {
           </p>
         </header>
 
+        <div className="mb-6">
+          <label htmlFor="device-select" className="mb-2 block text-sm text-slate-300">
+            Select device
+          </label>
+          <select
+            id="device-select"
+            value={selectedDevice ? String(selectedDevice.id) : ""}
+            onChange={(event) => {
+              const device = devices.find((item) => String(item.id) === event.target.value);
+              setSelectedDevice(device ?? null);
+            }}
+            disabled={devicesLoading || devices.length === 0}
+            className="w-full max-w-md rounded-xl border border-slate-700 bg-slate-800 px-4 py-3 text-white outline-none transition focus:border-cyan-400 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {devicesLoading && <option value="">Loading devices...</option>}
+            {!devicesLoading && devices.length === 0 && (
+              <option value="">No devices available</option>
+            )}
+            {devices.map((device) => (
+              <option key={device.id} value={String(device.id)}>
+                {device.device_name} ({device.device_type})
+              </option>
+            ))}
+          </select>
+          {deviceError && <p className="mt-2 text-sm text-rose-400">{deviceError}</p>}
+        </div>
+
         <div className="grid gap-5 sm:grid-cols-3">
           <MetricCard label="Temperature" value={temperature?.toFixed(1) ?? "--"} unit="°C" />
           <MetricCard label="Humidity" value={humidity?.toFixed(1) ?? "--"} unit="%" />
@@ -89,7 +242,7 @@ export default function DashboardPage() {
             <button
               type="button"
               onClick={toggleRelay}
-              disabled={connection !== "Connected"}
+              disabled={connection !== "Connected" || !selectedDevice?.topic_pub}
               className="mt-5 rounded-xl bg-cyan-500 px-5 py-3 font-medium text-slate-950 transition hover:bg-cyan-400 disabled:cursor-not-allowed disabled:opacity-40"
             >
               Turn {relayOn ? "off" : "on"}

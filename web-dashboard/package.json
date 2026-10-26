@@ -9,6 +9,7 @@
     "simulate:esp32": "node scripts/esp32-simulator.mjs"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.118.0",
     "mqtt": "^5.10.4",
     "next": "^15.2.0",
     "react": "^19.0.0",
