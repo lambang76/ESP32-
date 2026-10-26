@@ -17,3 +17,4 @@ pnpm-debug.log*
 # PlatformIO
 firmware/.pio/
 firmware/include/secrets.h
+firmware/arduino/SmartGarageESP32/secrets.h

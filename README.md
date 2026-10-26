@@ -4,11 +4,13 @@ ESP32 DHT temperature/humidity reporting and relay control over an EMQX Cloud de
 
 ## Firmware
 
-1. Install PlatformIO in VS Code, open `firmware/`, and connect the ESP32 by USB.
-2. Copy `include/secrets.example.h` to `include/secrets.h`, then fill in your Wi-Fi and EMQX credentials. The real `secrets.h` is ignored by Git.
-3. Wire DHT11/DHT22 data to GPIO 4 (select `DHT11` or `DHT22` in `src/main.cpp`), VCC to 3V3, and GND to GND. Wire the relay signal to GPIO 2 and use an appropriate external supply for the relay/load.
-4. Confirm the relay module is active-HIGH before connecting a real load. The firmware sets GPIO 2 HIGH for `ON`/`OPEN` and LOW for `OFF`/`CLOSE`.
-5. Build and upload using PlatformIO, then open Serial Monitor at 115200 baud.
+1. Install the ESP32 board package from Arduino IDE **Boards Manager** (Espressif Systems).
+2. Install **PubSubClient**, **DHT sensor library** by Adafruit, and **Adafruit Unified Sensor** from **Library Manager**.
+3. Open `firmware/arduino/SmartGarageESP32/SmartGarageESP32.ino` in Arduino IDE.
+4. Copy `firmware/arduino/SmartGarageESP32/secrets.example.h` to `firmware/arduino/SmartGarageESP32/secrets.h`; fill in Wi-Fi and EMQX credentials. The real `secrets.h` is ignored by Git.
+5. Wire DHT11/DHT22 data to GPIO 4 (select `DHT11` or `DHT22` in the sketch), VCC to 3V3, and GND to GND. Wire relay input to GPIO 2 and power its module appropriately.
+6. In **Tools**, select your ESP32 board (usually **ESP32 Dev Module**) and its USB port. Confirm the relay module is active-HIGH before connecting a load: GPIO 2 HIGH means ON/OPEN; LOW means OFF/CLOSE.
+7. Upload the sketch and open Serial Monitor at 115200 baud.
 
 The firmware publishes readings every five seconds to `jtd/esp32/garasi/suhu` and `jtd/esp32/garasi/kelembapan`, listens on `jtd/esp32/garasi/relay`, and reports health metrics to `jtd/esp32/garasi/metrics`. It connects to EMQX Cloud over MQTT/TLS on port `8883`. The firmware currently uses `setInsecure()` for a prototype; install the EMQX CA certificate and validate TLS before production use.
 
