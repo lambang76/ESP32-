@@ -28,9 +28,12 @@ if (!host || !username || !password) {
   process.exit(1);
 }
 
-const TEMP_TOPIC = "esp32/sensor/temperature";
-const HUMIDITY_TOPIC = "esp32/sensor/humidity";
-const RELAY_TOPIC = "esp32/actuator/relay";
+const GARAGE_TOPIC = "jtd/esp32/garasi";
+const TEMP_TOPIC = `${GARAGE_TOPIC}/suhu`;
+const HUMIDITY_TOPIC = `${GARAGE_TOPIC}/kelembapan`;
+const DOOR_TOPIC = `${GARAGE_TOPIC}/pintu`;
+const RFID_TOPIC = `${GARAGE_TOPIC}/rfid`;
+const RELAY_TOPIC = `${GARAGE_TOPIC}/relay`;
 
 const client = mqtt.connect(`mqtts://${host}:8883`, {
   username,
@@ -43,6 +46,7 @@ const client = mqtt.connect(`mqtts://${host}:8883`, {
 
 let temperature = 25.0;
 let humidity = 58.0;
+let doorOpen = false;
 
 client.on("connect", () => {
   console.log("ESP32 simulator connected to your EMQX Cloud deployment over MQTT/TLS");
@@ -50,15 +54,40 @@ client.on("connect", () => {
     if (error) console.error("Relay subscribe failed:", error.message);
     else console.log(`Listening for relay commands on ${RELAY_TOPIC}`);
   });
+  publishDoorState();
+  publishDemoRfid();
 });
 
 client.on("reconnect", () => console.log("Reconnecting to EMQX..."));
 client.on("error", (error) => console.error("MQTT error:", error.message));
 client.on("message", (topic, message) => {
   if (topic === RELAY_TOPIC) {
-    console.log(`Simulated relay received: ${message.toString()}`);
+    const command = message.toString().trim().toUpperCase();
+    console.log(`Simulated garage command received: ${command}`);
+
+    if (command === "OPEN" || command === "ON") {
+      doorOpen = true;
+      publishDoorState();
+    } else if (command === "CLOSE" || command === "OFF") {
+      doorOpen = false;
+      publishDoorState();
+    }
   }
 });
+
+function publishDoorState() {
+  if (!client.connected) return;
+  const state = doorOpen ? "TERBUKA" : "TERTUTUP";
+  client.publish(DOOR_TOPIC, state);
+  console.log(`Published garage door state: ${state}`);
+}
+
+function publishDemoRfid() {
+  if (!client.connected) return;
+  const uid = `JTD-DUMMY-${Math.floor(1000 + Math.random() * 9000)}`;
+  client.publish(RFID_TOPIC, uid);
+  console.log(`Simulated RFID tap: ${uid}`);
+}
 
 function publishReadings() {
   if (!client.connected) return;
@@ -73,13 +102,16 @@ function publishReadings() {
   client.publish(TEMP_TOPIC, tempValue);
   client.publish(HUMIDITY_TOPIC, humidityValue);
   console.log(`Published temperature ${tempValue} °C, humidity ${humidityValue}%`);
+  publishDoorState();
 }
 
 publishReadings();
 const timer = setInterval(publishReadings, 5000);
+const rfidTimer = setInterval(publishDemoRfid, 30_000);
 
 function shutdown() {
   clearInterval(timer);
+  clearInterval(rfidTimer);
   client.end(false, () => {
     console.log("ESP32 simulator disconnected");
     process.exit(0);
