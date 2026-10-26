@@ -89,7 +89,7 @@ export default function DashboardPage() {
   const clientRef = useRef<MqttClient | null>(null);
   const subscribedTopicRef = useRef<string | null>(null);
   const subscriptionGenerationRef = useRef(0);
-  const logEndRef = useRef<HTMLDivElement | null>(null);
+  const terminalLogRef = useRef<HTMLDivElement | null>(null);
 
   const [connection, setConnection] = useState("Connecting");
   const [authChecked, setAuthChecked] = useState(false);
@@ -370,7 +370,8 @@ export default function DashboardPage() {
   }, [selectedDevice, mqttConnected, appendLog]);
 
   useEffect(() => {
-    logEndRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+    const terminal = terminalLogRef.current;
+    if (terminal) terminal.scrollTop = terminal.scrollHeight;
   }, [terminalEntries]);
 
   function publishGateCommand(command: "OPEN" | "CLOSE") {
@@ -701,7 +702,7 @@ export default function DashboardPage() {
                 <span className="h-2.5 w-2.5 rounded-full bg-emerald-400/80" />
               </div>
             </div>
-            <div className="h-56 space-y-2 overflow-y-auto p-3 font-mono text-[11px] sm:h-64 sm:p-5 sm:text-xs">
+            <div ref={terminalLogRef} className="h-56 space-y-2 overflow-y-auto p-3 font-mono text-[11px] sm:h-64 sm:p-5 sm:text-xs">
               {terminalEntries.length === 0 ? (
                 <p className="text-slate-600">// Menunggu pesan MQTT...</p>
               ) : (
@@ -713,7 +714,6 @@ export default function DashboardPage() {
                   </div>
                 ))
               )}
-              <div ref={logEndRef} />
             </div>
           </section>
         </section>
