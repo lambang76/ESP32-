@@ -61,6 +61,15 @@ npm run simulate:esp32
 
 The simulator connects to your EMQX Cloud deployment over MQTT/TLS on port `8883`, publishes changing dummy temperature and humidity values every five seconds, and prints relay commands sent from the dashboard. Press `Ctrl+C` to stop it.
 
+Run just one simulator for the default device. If you want to run multiple dummy devices at the same time, give each a unique ID so their MQTT topics do not collide. For example, in separate terminals:
+
+```powershell
+npm run simulate:esp32 -- --device=hp
+npm run simulate:esp32 -- --device=pc
+```
+
+These publish under `jtd/esp32/garasi/hp/...` and `jtd/esp32/garasi/pc/...`. Add one row per simulator to Supabase `devices`; set `topic_sub` to `jtd/esp32/garasi/hp/#` and `topic_pub` to `jtd/esp32/garasi/hp/relay` for the first, then replace `hp` with `pc` for the second. Select the desired device in the dashboard. The original command without `--device` continues to use `jtd/esp32/garasi/...`.
+
 The dashboard connects to `wss://<your-emqx-host>:8084/mqtt`.
 
 ## Topics

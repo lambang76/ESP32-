@@ -28,7 +28,19 @@ if (!host || !username || !password) {
   process.exit(1);
 }
 
-const GARAGE_TOPIC = "jtd/esp32/garasi";
+const deviceArg = process.argv
+  .slice(2)
+  .find((argument) => argument.startsWith("--device="))
+  ?.slice("--device=".length);
+const deviceId = (deviceArg || process.env.SIM_DEVICE_ID || "").trim().toLowerCase();
+
+if (deviceId && !/^[a-z0-9][a-z0-9_-]{0,31}$/.test(deviceId)) {
+  console.error("Invalid device ID. Use 1-32 characters: lowercase letters, numbers, _ or -.");
+  process.exit(1);
+}
+
+// No ID keeps compatibility with the existing single-device topic namespace.
+const GARAGE_TOPIC = `jtd/esp32/garasi${deviceId ? `/${deviceId}` : ""}`;
 const TEMP_TOPIC = `${GARAGE_TOPIC}/suhu`;
 const HUMIDITY_TOPIC = `${GARAGE_TOPIC}/kelembapan`;
 const METRICS_TOPIC = `${GARAGE_TOPIC}/metrics`;
@@ -52,6 +64,7 @@ const simulatorStartedAt = Date.now();
 
 client.on("connect", () => {
   console.log("ESP32 simulator connected to your EMQX Cloud deployment over MQTT/TLS");
+  console.log(`Simulated device: ${deviceId || "default"} (${GARAGE_TOPIC})`);
   client.subscribe(RELAY_TOPIC, (error) => {
     if (error) console.error("Relay subscribe failed:", error.message);
     else console.log(`Listening for relay commands on ${RELAY_TOPIC}`);
