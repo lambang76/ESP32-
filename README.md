@@ -73,3 +73,54 @@ The dashboard connects to `wss://<your-emqx-host>:8084/mqtt`.
 | jtd/esp32/garasi/relay | Dashboard to ESP32 | ON / OPEN or OFF / CLOSE |
 
 The real ESP32 firmware and dummy simulator are separate MQTT clients. Keep npm run simulate:esp32 available for demos; stop it while running the physical ESP32 on the same topics to avoid mixed telemetry.
+
+## Panduan menyusun proposal tugas
+
+Bagian ini bisa dipakai sebagai panduan teman yang menyusun proposal untuk diajukan ke dosen. Sesuaikan format, panjang dokumen, dan aturan sitasi dengan pedoman kampus serta arahan dosen pembimbing. Isi proposal dengan kondisi sistem yang benar-benar sudah dibuat; jangan menuliskan fitur rencana sebagai fitur yang sudah berjalan.
+
+### Usulan judul
+
+**Rancang Bangun Prototipe Smart Garage Berbasis ESP32 dengan Pemantauan dan Kendali Jarak Jauh melalui MQTT**
+
+Judul dapat disesuaikan setelah ruang lingkup disepakati. Jika prototipe hanya diuji memakai simulator, tulis kata *simulasi* atau *prototipe* dengan jelas dan jangan mengklaim pengujian pada gerbang fisik.
+
+### Kerangka proposal
+
+1. **Halaman awal** — sampul sesuai format kampus, identitas anggota kelompok, program studi, dan tahun.
+2. **BAB I: Pendahuluan**
+   - Latar belakang: kebutuhan memantau kondisi garasi/gerbang dan contoh manfaat IoT.
+   - Identifikasi dan rumusan masalah: bagaimana mengirim data sensor ke dashboard dan mengendalikan relay melalui jaringan internet.
+   - Batasan masalah: jelaskan sensor, aktuator, broker, dashboard, dan jenis pengujian yang benar-benar digunakan.
+   - Tujuan, manfaat, serta sistematika penulisan.
+3. **BAB II: Tinjauan Pustaka** — ringkas dan sitasikan sumber tepercaya tentang ESP32, sensor DHT, relay, MQTT, EMQX, Next.js, Supabase, serta sistem serupa. Bandingkan karya terdahulu dan jelaskan celah yang ingin dijawab.
+4. **BAB III: Metodologi dan Perancangan**
+   - Metode pengembangan dan tahapan kerja.
+   - Diagram blok dan arsitektur: ESP32/simulator ↔ EMQX ↔ dashboard; Supabase dipakai untuk autentikasi dan daftar perangkat.
+   - Diagram alir firmware dan dashboard, rancangan topik/payload MQTT, serta rancangan rangkaian.
+   - Perangkat dan perangkat lunak yang diperlukan.
+   - Rencana pengujian beserta indikator keberhasilan.
+5. **Jadwal dan anggaran** — tabel kegiatan per minggu dan estimasi komponen berdasarkan harga/sumber yang dicatat saat proposal dibuat. Tandai komponen yang belum tersedia sebagai rencana.
+6. **Daftar pustaka** — gunakan gaya sitasi yang diminta dosen; setiap teori, gambar, dan data dari sumber lain harus dirujuk.
+7. **Lampiran** — diagram rangkaian, daftar pin, contoh payload/topik, serta foto atau tangkapan layar hasil yang sudah ada.
+
+### Fakta proyek yang bisa dipakai
+
+- Firmware Arduino ESP32 membaca suhu dan kelembapan dari DHT11/DHT22 setiap lima detik.
+- Firmware mengirim data ke topik `jtd/esp32/garasi/suhu` dan `jtd/esp32/garasi/kelembapan`, menerima perintah relay melalui `jtd/esp32/garasi/relay`, dan mengirim telemetri perangkat ke `jtd/esp32/garasi/metrics`.
+- Dashboard Next.js menerima data MQTT melalui WebSocket TLS. EMQX Cloud menjadi broker; Supabase menyediakan autentikasi dan daftar perangkat.
+- Simulator dummy dapat dipakai untuk demonstrasi alur dashboard tanpa papan ESP32 fisik. Bedakan hasil simulator dari hasil uji perangkat nyata.
+- Pengukuran CPU yang ditampilkan adalah estimasi beban loop aplikasi, bukan pemakaian CPU total ESP32.
+- Pada firmware saat ini belum ada pembaca RFID atau sensor posisi pintu. Status gerbang fisik tidak boleh diklaim terdeteksi otomatis tanpa sensor tambahan dan implementasinya.
+- Relay GPIO 2 hanya mengendalikan masukan relay. Untuk integrasi gerbang nyata, gunakan masukan tombol bertegangan rendah dari controller gerbang yang kompatibel; jangan hubungkan ESP32 langsung ke motor atau tegangan PLN.
+
+### Rencana pengujian yang disarankan
+
+Cantumkan langkah uji, hasil yang diharapkan, hasil aktual, dan bukti. Contoh: koneksi Wi-Fi dan broker; pembaruan suhu/kelembapan tiap lima detik; status koneksi saat jaringan terputus dan pulih; perintah ON/OFF pada simulator; login dan pemilihan perangkat; serta uji ESP32 fisik jika perangkat tersedia. Untuk nilai ambang keberhasilan (misalnya keberhasilan pesan atau waktu respons), sepakati metodenya dengan dosen dan ukur—jangan mengarang angka hasil.
+
+### Checklist sebelum diajukan
+
+- Konfirmasi judul, format, metode, ruang lingkup, serta jadwal dengan dosen.
+- Pastikan proposal menyebut simulator atau perangkat fisik secara akurat.
+- Cocokkan diagram, nama pin, topik MQTT, dan uraian dengan firmware/dashboard di repositori ini.
+- Cari sumber primer/resmi untuk spesifikasi teknis; tulis sitasi dan daftar pustaka secara konsisten.
+- Minta semua anggota memeriksa isi, pembagian tugas, dan anggaran sebelum dokumen diajukan.
