@@ -78,13 +78,13 @@ export default function HomePage() {
   }
 
   return (
-    <main className="relative min-h-screen overflow-hidden bg-[#07111e] text-slate-100">
+    <main className="page-enter relative min-h-screen overflow-hidden bg-[#07111e] text-slate-100">
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_12%_0%,rgba(8,145,178,0.2),transparent_34%),radial-gradient(ellipse_at_90%_30%,rgba(109,40,217,0.14),transparent_38%)]" />
 
       <header className="relative border-b border-white/[0.07] bg-slate-950/30 backdrop-blur-xl">
         <nav className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3 px-4 py-4 sm:px-6 lg:px-8">
           <Link href="/" className="flex min-w-0 items-center gap-3">
-            <span className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl border border-cyan-300/20 bg-cyan-300/10 text-cyan-200">
+            <span className="float-gently grid h-10 w-10 shrink-0 place-items-center rounded-2xl border border-cyan-300/20 bg-cyan-300/10 text-cyan-200">
               <DoorClosed size={21} />
             </span>
             <span>

@@ -19,3 +19,39 @@ body {
   margin: 0;
   overflow-x: hidden;
 }
+
+@keyframes page-enter {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes soft-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-5px); }
+}
+
+.auth-card-enter {
+  animation: page-enter 650ms cubic-bezier(.2,.75,.25,1) both;
+}
+
+.page-enter > section,
+.page-enter > header,
+.page-enter > div {
+  animation: page-enter 650ms cubic-bezier(.2,.75,.25,1) both;
+}
+
+.page-enter > section:nth-of-type(2) { animation-delay: 90ms; }
+.page-enter > section:nth-of-type(3) { animation-delay: 160ms; }
+
+.float-gently {
+  animation: soft-float 5s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

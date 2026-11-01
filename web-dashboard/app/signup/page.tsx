@@ -50,7 +50,12 @@ export default function SignupPage() {
     });
 
     if (signupError) {
-      setError(signupError.message);
+      const normalizedMessage = signupError.message.toLowerCase();
+      if (signupError.code === "over_email_send_rate_limit" || normalizedMessage.includes("email rate limit exceeded")) {
+        setError("Pendaftaran belum bisa mengirim email konfirmasi karena batas pengiriman email Supabase tercapai. Coba lagi nanti atau hubungi pengelola untuk mengaktifkan SMTP khusus.");
+      } else {
+        setError("Akun belum berhasil dibuat. Periksa kembali data dan koneksi, lalu coba lagi.");
+      }
       setLoading(false);
       return;
     }

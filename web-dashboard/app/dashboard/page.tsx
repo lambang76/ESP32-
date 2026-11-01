@@ -442,13 +442,13 @@ export default function DashboardPage() {
     : null;
 
   return (
-    <main className="relative min-h-screen overflow-hidden bg-[#07111e] text-slate-100">
+    <main className="page-enter relative min-h-screen overflow-hidden bg-[#07111e] text-slate-100">
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,rgba(8,145,178,0.16),transparent_35%),radial-gradient(ellipse_at_bottom_right,rgba(15,23,42,0.75),transparent_45%)]" />
 
       <header className="relative border-b border-white/10 bg-slate-950/40 backdrop-blur-xl">
         <div className="mx-auto flex max-w-7xl flex-col gap-4 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6 sm:py-5 lg:px-8">
           <div className="flex min-w-0 items-center gap-3 sm:gap-4">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-cyan-300/20 bg-cyan-400/10 text-cyan-300 shadow-lg shadow-cyan-950/30 sm:h-12 sm:w-12">
+            <div className="float-gently flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-cyan-300/20 bg-cyan-400/10 text-cyan-300 shadow-lg shadow-cyan-950/30 sm:h-12 sm:w-12">
               <DoorOpen size={22} />
             </div>
             <div className="min-w-0">

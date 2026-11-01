@@ -51,6 +51,12 @@ Run `web-dashboard/supabase/forum.sql` in the Supabase SQL Editor to create the 
 
 The dashboard reads a JSON metrics payload from `jtd/esp32/garasi/metrics`. The firmware and dummy simulator publish free/total/minimum heap, estimated Arduino loop load, CPU clock, uptime, and Wi-Fi RSSI. The displayed loop-load percentage is an estimate of the Arduino application loop's busy time, not a measurement of all ESP32 FreeRTOS tasks.
 
+### Local monitoring backup when the cloud is unavailable
+
+Both ESP32 firmware copies also serve a small local dashboard directly from the board. It does not depend on EMQX or Vercel: while the ESP32 and its Wi-Fi router are powered, open the ESP32's local IP from a phone or computer on the same LAN. With the static DHCP lease in the proposal, the address is `http://192.168.88.50/`. The page shows the latest DHT temperature/humidity and relay state, and can send relay commands locally even while MQTT is offline.
+
+For access from a second router/network, route the two LANs through a VPN such as WireGuard on the MikroTik, then open the ESP32's private IP through that VPN. The WAN and VPN endpoint must still be reachable for access from outside the garage. Do not expose the ESP32's plain HTTP port directly to the public internet. If the router or ESP32 loses power, the local page cannot provide live data; use a DC UPS and manual access fallback. The current local page covers the firmware's DHT/relay hardware; proposal-only RFID, reed-switch, and servo states need their own firmware integration before the page can display them.
+
 ### Test without an ESP32
 
 Open one terminal in `web-dashboard/` and run `npm run dev` for the dashboard. In a second terminal in the same folder, run:
