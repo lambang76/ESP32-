@@ -150,6 +150,11 @@ export default function SimulationPage() {
   const clientRef = useRef<MqttClient | null>(null);
   const subscribedTopicRef = useRef<string | null>(null);
   const fullscreenRef = useRef<HTMLDivElement | null>(null);
+  const topologyCanvasRef = useRef<HTMLDivElement | null>(null);
+  const esp32NodeRef = useRef<HTMLDivElement | null>(null);
+  const emqxNodeRef = useRef<HTMLDivElement | null>(null);
+  const vercelNodeRef = useRef<HTMLDivElement | null>(null);
+  const routerBNodeRef = useRef<HTMLDivElement | null>(null);
 
   const [mode, setMode] = useState<Mode>("realtime");
   const [scenario, setScenario] = useState<SimulationScenario>("normal");
@@ -173,6 +178,8 @@ export default function SimulationPage() {
   const [speed, setSpeed] = useState(1);
   const [fullscreen, setFullscreen] = useState(false);
   const [commandStatus, setCommandStatus] = useState("");
+  const [topologySize, setTopologySize] = useState({ width: 0, height: 0 });
+  const [connectorPaths, setConnectorPaths] = useState({ esp32ToEmqx: "", vercelToRouterB: "" });
   const currentSteps = simulationScenarios[scenario].steps;
 
   const appendLog = useCallback((topic: string, payload: string) => {
@@ -491,6 +498,44 @@ export default function SimulationPage() {
     { icon: DoorClosed, title: "Reed konfirmasi", detail: "Posisi fisik tampil di web lokal" },
   ];
 
+  useEffect(() => {
+    const canvas = topologyCanvasRef.current;
+    if (!canvas) return;
+
+    const updateConnectorPaths = () => {
+      const bounds = canvas.getBoundingClientRect();
+      const esp32 = esp32NodeRef.current?.getBoundingClientRect();
+      const emqx = emqxNodeRef.current?.getBoundingClientRect();
+      const vercel = vercelNodeRef.current?.getBoundingClientRect();
+      const routerB = routerBNodeRef.current?.getBoundingClientRect();
+      if (bounds.width === 0 || bounds.height === 0 || !esp32 || !emqx || !vercel || !routerB) return;
+
+      const espStart = { x: esp32.right - bounds.left, y: esp32.top - bounds.top + esp32.height * 0.45 };
+      const mqttEnd = { x: emqx.left - bounds.left + emqx.width * 0.35, y: emqx.bottom - bounds.top };
+      const webStart = { x: vercel.left - bounds.left + vercel.width * 0.55, y: vercel.bottom - bounds.top };
+      const routerEnd = { x: routerB.left - bounds.left + routerB.width * 0.52, y: routerB.top - bounds.top };
+
+      setTopologySize({ width: bounds.width, height: bounds.height });
+      setConnectorPaths({
+        esp32ToEmqx: `M ${espStart.x} ${espStart.y} C ${espStart.x + 110} ${espStart.y - 75}, ${mqttEnd.x - 80} ${mqttEnd.y + 120}, ${mqttEnd.x} ${mqttEnd.y}`,
+        vercelToRouterB: `M ${webStart.x} ${webStart.y} C ${webStart.x + 40} ${webStart.y + 110}, ${routerEnd.x + 130} ${routerEnd.y - 100}, ${routerEnd.x} ${routerEnd.y}`,
+      });
+    };
+
+    const observer = new ResizeObserver(updateConnectorPaths);
+    observer.observe(canvas);
+    [esp32NodeRef.current, emqxNodeRef.current, vercelNodeRef.current, routerBNodeRef.current].forEach((node) => {
+      if (node) observer.observe(node);
+    });
+    window.addEventListener("resize", updateConnectorPaths);
+    updateConnectorPaths();
+
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("resize", updateConnectorPaths);
+    };
+  }, [mode, scenario]);
+
   return (
     <main ref={fullscreenRef} className="min-h-screen overflow-x-hidden bg-[#07111e] text-slate-100">
       <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(ellipse_at_10%_0%,rgba(8,145,178,0.14),transparent_35%),radial-gradient(ellipse_at_88%_34%,rgba(109,40,217,0.10),transparent_38%)]" />
@@ -584,15 +629,28 @@ export default function SimulationPage() {
               <button type="button" onClick={() => void toggleFullscreen()} className="inline-flex items-center gap-2 rounded-lg border border-slate-700 px-3 py-2 text-xs font-medium text-slate-300 hover:border-cyan-300/40 hover:text-white"><Maximize2 size={14} />{fullscreen ? "Keluar layar penuh" : "Layar penuh (F)"}</button>
             </div>
 
-            <div className="rounded-2xl border border-slate-300 bg-slate-50 p-3 text-slate-800 shadow-inner sm:p-5">
+            <div ref={topologyCanvasRef} className="relative rounded-2xl border border-slate-300 bg-slate-50 p-3 text-slate-800 shadow-inner sm:p-5">
+              <svg aria-hidden="true" className="pointer-events-none absolute inset-0 z-10 hidden h-full w-full overflow-visible xl:block" viewBox={`0 0 ${topologySize.width} ${topologySize.height}`} preserveAspectRatio="none">
+                <defs><marker id="topology-connector-arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M 0 0 L 10 5 L 0 10 z" fill={scenario === "normal" ? "#0891b2" : scenario === "web_down" ? "#e11d48" : "#d97706"} /></marker></defs>
+                {connectorPaths.esp32ToEmqx && <>
+                  <path id="connector-esp32-emqx" d={connectorPaths.esp32ToEmqx} fill="none" stroke={scenario === "normal" ? "#0891b2" : scenario === "web_down" ? "#e11d48" : "#d97706"} strokeWidth="4" strokeDasharray="10 8" strokeLinecap="round" markerEnd="url(#topology-connector-arrow)" />
+                  <text fill="#0e7490" fontSize="12" fontWeight="700" paintOrder="stroke" stroke="#f8fafc" strokeWidth="5"><textPath href="#connector-esp32-emqx" startOffset="48%">MQTT TLS · 8883</textPath></text>
+                </>}
+                {connectorPaths.vercelToRouterB && <>
+                  <path id="connector-vercel-router" d={connectorPaths.vercelToRouterB} fill="none" stroke={scenario === "normal" ? "#0d9488" : scenario === "web_down" ? "#e11d48" : "#d97706"} strokeWidth="4" strokeDasharray="10 8" strokeLinecap="round" markerEnd="url(#topology-connector-arrow)" />
+                  <text fill="#0f766e" fontSize="12" fontWeight="700" paintOrder="stroke" stroke="#f8fafc" strokeWidth="5"><textPath href="#connector-vercel-router" startOffset="48%">HTTPS / WSS</textPath></text>
+                </>}
+                {mode === "simulation" && playing && scenario === "normal" && connectorPaths.esp32ToEmqx && <circle r="6" fill="#06b6d4"><animateMotion dur="2.5s" repeatCount="indefinite" path={connectorPaths.esp32ToEmqx} /></circle>}
+                {mode === "simulation" && playing && scenario === "normal" && connectorPaths.vercelToRouterB && <circle r="6" fill="#14b8a6"><animateMotion dur="2.2s" repeatCount="indefinite" path={connectorPaths.vercelToRouterB} /></circle>}
+              </svg>
               <section className={`rounded-xl border-2 border-dashed p-3 sm:p-4 ${scenario === "web_down" || (scenario === "power_out" && !backupPowerOn) ? "border-rose-300 bg-rose-50" : scenario === "power_out" && backupPowerOn ? "border-amber-300 bg-amber-50" : "border-sky-300 bg-sky-50"}`}>
                 <div className="mb-3 flex flex-wrap items-start justify-between gap-2">
                   <div><h3 className="text-xs font-extrabold sm:text-sm">Internet / layanan cloud</h3><p className="mt-1 text-[10px] text-slate-600 sm:text-xs">EMQX adalah broker MQTT; Vercel meng-host website. Keduanya layanan berbeda.</p></div>
                   <span className={`rounded-full px-2.5 py-1 text-[9px] font-bold uppercase ${cloudPathDown ? "bg-rose-100 text-rose-800" : cloudPathConditional ? "bg-amber-100 text-amber-800" : "bg-emerald-100 text-emerald-800"}`}>{scenario === "web_down" ? "Cloud down" : scenario === "power_out" && !simulatedDevicePowered ? "Tidak ada telemetry" : scenario === "power_out" ? "Tergantung UPS + WAN" : "Jalur normal"}</span>
                 </div>
                 <div className="grid gap-2 sm:grid-cols-2">
-                  <TopologyDevice icon={Cloud} title="EMQX Cloud" detail="Broker MQTT · TLS 8883 / WSS 8084 · topik esp32/garasi" state={mode === "realtime" ? mqttConnected ? "active" : "standby" : scenario === "normal" ? "active" : scenario === "web_down" || !simulatedDevicePowered ? "down" : "conditional"} stateText={mode === "realtime" ? mqttConnected ? "Terhubung" : "Menunggu" : scenario === "normal" ? "Aktif" : scenario === "web_down" || !simulatedDevicePowered ? "Down" : "Kondisional"} />
-                  <TopologyDevice icon={Gauge} title="Dashboard Vercel" detail="Next.js · dibuka pengguna melalui browser" state={mode === "realtime" ? "active" : scenario === "normal" ? "active" : scenario === "power_out" && simulatedDevicePowered ? "conditional" : "down"} stateText={mode === "realtime" ? "Website" : scenario === "normal" ? "Aktif" : scenario === "power_out" && simulatedDevicePowered ? "Kondisional" : "Down"} />
+                  <div ref={emqxNodeRef} className="relative z-20"><TopologyDevice icon={Cloud} title="EMQX Cloud" detail="Broker MQTT · TLS 8883 / WSS 8084 · topik esp32/garasi" state={mode === "realtime" ? mqttConnected ? "active" : "standby" : scenario === "normal" ? "active" : scenario === "web_down" || !simulatedDevicePowered ? "down" : "conditional"} stateText={mode === "realtime" ? mqttConnected ? "Terhubung" : "Menunggu" : scenario === "normal" ? "Aktif" : scenario === "web_down" || !simulatedDevicePowered ? "Down" : "Kondisional"} /></div>
+                  <div ref={vercelNodeRef} className="relative z-20"><TopologyDevice icon={Gauge} title="Dashboard Vercel" detail="Next.js · dibuka pengguna melalui browser" state={mode === "realtime" ? "active" : scenario === "normal" ? "active" : scenario === "power_out" && simulatedDevicePowered ? "conditional" : "down"} stateText={mode === "realtime" ? "Website" : scenario === "normal" ? "Aktif" : scenario === "power_out" && simulatedDevicePowered ? "Kondisional" : "Down"} /></div>
                 </div>
               </section>
 
@@ -604,7 +662,7 @@ export default function SimulationPage() {
                     <div className="grid gap-1">
                       <TopologyDevice icon={KeyRound} title="RFID RC522" detail="Membaca UID kartu/tag 13,56 MHz melalui SPI." state={mode === "simulation" ? !simulatedDevicePowered ? "down" : routeProgress === 0 ? "active" : "standby" : "standby"} stateText={mode === "simulation" ? !simulatedDevicePowered ? "Mati" : routeProgress === 0 ? "Tap kartu" : "Pembaca" : "SPI"} />
                       <span className={`justify-self-center text-lg font-bold ${mode === "simulation" && routeProgress === 0 ? "animate-bounce text-cyan-700" : "text-slate-300"}`} aria-hidden="true">↓</span>
-                      <TopologyDevice icon={Activity} title="ESP32" detail="Memeriksa UID pada daftar kartu yang diizinkan; menjalankan web server lokal port 80." state={mode === "simulation" ? simulatedDevicePowered ? routeProgress === 1 ? "active" : "standby" : "down" : mqttConnected ? "active" : "standby"} stateText={mode === "simulation" ? simulatedDevicePowered ? routeProgress === 1 ? "Validasi" : "Kontrol" : "Mati" : mqttConnected ? "Online" : "Siap lokal"} />
+                      <div ref={esp32NodeRef} className="relative z-20"><TopologyDevice icon={Activity} title="ESP32" detail="Memeriksa UID pada daftar kartu yang diizinkan; menjalankan web server lokal port 80." state={mode === "simulation" ? simulatedDevicePowered ? routeProgress === 1 ? "active" : "standby" : "down" : mqttConnected ? "active" : "standby"} stateText={mode === "simulation" ? simulatedDevicePowered ? routeProgress === 1 ? "Validasi" : "Kontrol" : "Mati" : mqttConnected ? "Online" : "Siap lokal"} /></div>
                       <span className={`justify-self-center text-lg font-bold ${mode === "simulation" && routeProgress === 1 ? "animate-bounce text-cyan-700" : "text-slate-300"}`} aria-hidden="true">↓</span>
                       <TopologyDevice icon={RotateCw} title="Servo gerbang" detail="Menggerakkan model gerbang ke posisi buka/tutup; perlu catu daya 5 V terpisah." state={mode === "simulation" ? !simulatedDevicePowered ? "down" : routeProgress === 2 ? "active" : "standby" : "standby"} stateText={mode === "simulation" ? !simulatedDevicePowered ? "Mati" : routeProgress === 2 ? "Bergerak" : "Aktuator" : "PWM"} />
                     </div>
@@ -616,7 +674,7 @@ export default function SimulationPage() {
                 <section className="rounded-xl border-2 border-dashed border-teal-300 bg-teal-50 p-3 sm:p-4">
                   <div className="mb-3"><h3 className="text-xs font-extrabold sm:text-sm">Area pengguna · Router B</h3><p className="mt-1 text-[10px] text-slate-600 sm:text-xs">HP / laptop mengakses dashboard</p></div>
                   <div className="grid gap-2">
-                    <TopologyDevice icon={Wifi} title="Router B / Internet pengguna" detail="Jaringan pengguna berbeda; jalur cloud memakai internet. Akses IP lokal butuh WireGuard jika dikonfigurasi." state={scenario === "normal" || mode === "realtime" ? "active" : scenario === "power_out" && simulatedDevicePowered ? "conditional" : "standby"} stateText={scenario === "normal" || mode === "realtime" ? "Internet" : scenario === "power_out" && simulatedDevicePowered ? "Kondisional" : "Terpisah"} />
+                    <div ref={routerBNodeRef} className="relative z-20"><TopologyDevice icon={Wifi} title="Router B / Internet pengguna" detail="Jaringan pengguna berbeda; jalur cloud memakai internet. Akses IP lokal butuh WireGuard jika dikonfigurasi." state={scenario === "normal" || mode === "realtime" ? "active" : scenario === "power_out" && simulatedDevicePowered ? "conditional" : "standby"} stateText={scenario === "normal" || mode === "realtime" ? "Internet" : scenario === "power_out" && simulatedDevicePowered ? "Kondisional" : "Terpisah"} /></div>
                     <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-1 text-center text-[9px] font-semibold text-slate-500 sm:text-[10px]"><span>Browser</span><span className="text-slate-400">&rarr;</span><span>Vercel / MQTT WSS</span></div>
                     <TopologyDevice icon={Home} title="Dashboard HP / laptop" detail={mode === "simulation" && scenario !== "normal" && simulatedDevicePowered ? "Akses halaman ESP32 dari Wi-Fi lokal; dari luar perlu VPN MikroTik." : mode === "simulation" && !simulatedDevicePowered ? "Offline; operasikan gerbang secara manual." : "Pantau status reed switch dan kirim perintah buka/tutup."} state={mode === "simulation" ? !simulatedDevicePowered ? "down" : scenario === "normal" ? "active" : "conditional" : mqttConnected ? "active" : "standby"} stateText={mode === "simulation" ? !simulatedDevicePowered ? "Offline" : scenario === "normal" ? "Remote" : "Pakai lokal" : mqttConnected ? "Live" : "Menunggu"} />
                   </div>
