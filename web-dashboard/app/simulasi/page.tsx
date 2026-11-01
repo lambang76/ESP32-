@@ -15,14 +15,12 @@ import {
   DoorClosed,
   Gauge,
   Home,
-  KeyRound,
   LogOut,
   Maximize2,
   MessagesSquare,
   Pause,
   Play,
   Power,
-  RotateCw,
   SkipBack,
   SkipForward,
   Thermometer,
@@ -55,28 +53,28 @@ const simulationScenarios: Record<SimulationScenario, { label: string; steps: { 
   normal: {
     label: "Semua normal",
     steps: [
-      { title: "Kartu RFID dibaca", description: "Pengguna menempelkan kartu/tag 13,56 MHz ke RC522. ESP32 membaca UID kartu.", node: 0, event: "UID RFID terbaca" },
-      { title: "ESP32 memvalidasi UID", description: "ESP32 membandingkan UID dengan daftar kartu yang diizinkan di program. UID tidak dikenal ditolak dan servo tidak bergerak.", node: 1, event: "Validasi akses lokal" },
-      { title: "Servo membuka gerbang", description: "Untuk UID terdaftar, ESP32 menggerakkan servo ke posisi buka. Reed switch memeriksa posisi fisik gerbang, bukan sekadar perintah servo.", node: 2, event: "Servo bergerak · reed memverifikasi" },
-      { title: "Status tampil di web lokal", description: "Web server yang berjalan di ESP32 menampilkan status reed switch dan menerima perintah manual. Akses jarak jauh melewati MikroTik dengan VPN/DDNS yang dikonfigurasi.", node: 3, event: "Monitoring lokal tersedia" },
+      { title: "ESP32 membaca sensor", description: "ESP32 membaca suhu dan kelembapan DHT22, lalu menyiapkan status relay.", node: 0, event: "Data sensor dibaca" },
+      { title: "Data keluar lewat Router A", description: "ESP32 mengirim telemetry melalui Wi-Fi Router A dan koneksi internet.", node: 1, event: "Telemetry menuju broker" },
+      { title: "EMQX meneruskan MQTT", description: "Broker menerima suhu/kelembapan dan meneruskan pesan ke klien dashboard melalui MQTT over WebSockets.", node: 2, event: "Pesan MQTT diteruskan" },
+      { title: "Dashboard menerima data", description: "Browser membuka website di Vercel melalui Router B. Perintah relay kembali dari dashboard ke EMQX lalu ke ESP32.", node: 4, event: "Dashboard live · kontrol dua arah" },
     ],
   },
   web_down: {
     label: "Website / cloud down",
     steps: [
-      { title: "Akses internet / website cloud down", description: "Pengguna dari luar tidak dapat membuka dashboard cloud. Jalur akses RFID dan mekanisme kontrol lokal tetap bekerja karena berjalan di ESP32.", node: 2, event: "Akses jarak jauh terganggu" },
-      { title: "Kartu RFID tetap divalidasi", description: "RC522 dan daftar UID tersimpan di ESP32; akses lokal tidak bergantung pada Vercel, EMQX, atau internet.", node: 0, event: "Kontrol RFID lokal aktif" },
-      { title: "ESP32 menggerakkan servo", description: "UID terdaftar tetap dapat membuka gerbang. Reed switch tetap melaporkan posisi fisik selama rangkaian mendapat daya.", node: 1, event: "Akses gerbang lokal aktif" },
-      { title: "Buka server lokal dari Wi-Fi garasi", description: "Hubungkan HP ke Wi-Fi yang sama dengan ESP32 lalu buka IP lokal board (contoh DHCP lease 192.168.88.50). Akses dari jaringan luar memerlukan VPN MikroTik dan WAN aktif.", node: 3, event: "Web lokal tetap tersedia" },
+      { title: "Layanan cloud terputus", description: "EMQX/Vercel tidak bisa dipakai; dashboard remote kehilangan jalur MQTT dan website.", node: 0, event: "Jalur cloud terputus" },
+      { title: "ESP32 tetap melayani lokal", description: "HTTP server port 80 berjalan langsung di ESP32. Sensor dan relay tetap dapat dipantau selama ESP32 dan Router A menyala.", node: 1, event: "Server lokal ESP32 aktif" },
+      { title: "Router A terhubung ke Router B", description: "Akses lintas jaringan hanya tersedia jika routing intranet atau WireGuard antar-router sudah dikonfigurasi dan link-nya aktif.", node: 2, event: "Jalur intranet diperiksa" },
+      { title: "Pengguna membuka dashboard lokal", description: "Browser di Router B membuka alamat IP ESP32 melalui jalur Router A–B. Halaman ini disajikan ESP32, bukan Vercel.", node: 4, event: "Monitoring lokal lintas router" },
     ],
   },
   power_out: {
     label: "Listrik padam",
     steps: [
-      { title: "Listrik utama terputus", description: "Tanpa UPS, ESP32, RC522, reed switch, servo, dan router tidak bekerja. Gerbang harus dioperasikan dengan cara manual yang aman.", node: 0, event: "Daya utama padam" },
-      { title: "Periksa UPS", description: "UPS dapat memberi waktu operasi sementara. Pastikan ESP32 dan router mendapat daya; modem/ONT juga perlu UPS jika koneksi internet ingin bertahan.", node: 1, event: "Daya cadangan diperiksa" },
-      { title: "Akses elektronik kembali aktif sementara", description: "Jika ESP32 mendapat daya dari UPS, RFID, reed switch, servo, dan web server lokal dapat berfungsi selama kapasitas baterai masih cukup.", node: 2, event: "Sistem aktif dengan UPS" },
-      { title: "Akses manual saat UPS habis", description: "Ketika daya cadangan habis, web server dan aktuator mati. Gunakan kunci atau pelepas mekanis; monitoring jarak jauh juga terputus.", node: 3, event: "Akses manual diperlukan" },
+      { title: "Listrik PLN terputus", description: "Status monitoring ditentukan oleh posisi sakelar simulasi UPS.", node: 0, event: "Listrik utama padam" },
+      { title: "UPS mati atau tidak ada", description: "ESP32 dan Router A mati; tidak ada data live dari garasi. Gunakan akses manual yang aman.", node: 1, event: "Tidak ada daya cadangan" },
+      { title: "UPS menyuplai perangkat", description: "Jika UPS menyalakan ESP32 dan Router A, pembacaan sensor dan halaman lokal ESP32 tetap berjalan.", node: 2, event: "Daya cadangan aktif" },
+      { title: "Akses pengguna bergantung jalur", description: "HP di Router A dapat membuka IP ESP32. Akses dari Router B hanya berjalan jika Router B dan link intranet antar-router juga mendapat daya.", node: 4, event: "Monitoring sesuai jalur yang hidup" },
     ],
   },
 };
@@ -150,13 +148,6 @@ export default function SimulationPage() {
   const clientRef = useRef<MqttClient | null>(null);
   const subscribedTopicRef = useRef<string | null>(null);
   const fullscreenRef = useRef<HTMLDivElement | null>(null);
-  const topologyCanvasRef = useRef<HTMLDivElement | null>(null);
-  const routerANodeRef = useRef<HTMLDivElement | null>(null);
-  const wanNodeRef = useRef<HTMLDivElement | null>(null);
-  const esp32NodeRef = useRef<HTMLDivElement | null>(null);
-  const emqxNodeRef = useRef<HTMLDivElement | null>(null);
-  const vercelNodeRef = useRef<HTMLDivElement | null>(null);
-  const routerBNodeRef = useRef<HTMLDivElement | null>(null);
 
   const [mode, setMode] = useState<Mode>("realtime");
   const [scenario, setScenario] = useState<SimulationScenario>("normal");
@@ -171,8 +162,6 @@ export default function SimulationPage() {
   const [temperature, setTemperature] = useState<number | null>(null);
   const [humidity, setHumidity] = useState<number | null>(null);
   const [doorState, setDoorState] = useState<DoorState>(null);
-  const [rfidValue, setRfidValue] = useState<string | null>(null);
-  const [activeNode, setActiveNode] = useState(-1);
   const [eventLabel, setEventLabel] = useState("Menunggu aktivitas");
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [step, setStep] = useState(0);
@@ -180,8 +169,6 @@ export default function SimulationPage() {
   const [speed, setSpeed] = useState(1);
   const [fullscreen, setFullscreen] = useState(false);
   const [commandStatus, setCommandStatus] = useState("");
-  const [topologySize, setTopologySize] = useState({ width: 0, height: 0 });
-  const [connectorPaths, setConnectorPaths] = useState({ garageToWan: "", wanToEmqx: "", userToWan: "", wanToVercel: "" });
   const currentSteps = simulationScenarios[scenario].steps;
 
   const appendLog = useCallback((topic: string, payload: string) => {
@@ -297,32 +284,21 @@ export default function SimulationPage() {
       if (["suhu", "temperature", "temp"].includes(suffix)) {
         const value = Number(values?.temperature ?? values?.temp ?? values?.suhu ?? payload);
         if (Number.isFinite(value)) setTemperature(value);
-        setActiveNode(3);
         setEventLabel("Dashboard menerima data suhu");
       } else if (["kelembapan", "humidity", "hum"].includes(suffix)) {
         const value = Number(values?.humidity ?? values?.hum ?? values?.kelembapan ?? payload);
         if (Number.isFinite(value)) setHumidity(value);
-        setActiveNode(3);
         setEventLabel("Dashboard menerima data kelembapan");
       } else if (suffix === "metrics") {
-        setActiveNode(3);
         setEventLabel("Telemetry perangkat diterima dashboard");
       } else if (suffix === "pintu") {
         const state = String(values?.state ?? values?.pintu ?? payload).toUpperCase();
         if (state.includes("BUKA") || state.includes("OPEN") || ["ON", "1", "TRUE"].includes(state)) setDoorState("open");
         else if (state.includes("TUTUP") || state.includes("CLOSE") || ["OFF", "0", "FALSE"].includes(state)) setDoorState("closed");
-        setActiveNode(3);
         setEventLabel("Status pintu diterima dashboard");
-      } else if (suffix === "rfid") {
-        const value = values?.uid ?? values?.card_uid ?? values?.authorized_user ?? payload;
-        setRfidValue(String(value));
-        setActiveNode(3);
-        setEventLabel("Aktivitas RFID diterima dashboard");
       } else if (suffix === "relay") {
-        setActiveNode(0);
         setEventLabel(`Perintah relay diterima perangkat: ${payload}`);
       } else {
-        setActiveNode(3);
         setEventLabel(`Pesan MQTT diterima: ${suffix || "topic"}`);
       }
 
@@ -360,7 +336,6 @@ export default function SimulationPage() {
         setTemperature(null);
         setHumidity(null);
         setDoorState(null);
-        setRfidValue(null);
         appendLog("mqtt", `Mendengarkan ${nextTopic}`);
       });
     };
@@ -380,7 +355,6 @@ export default function SimulationPage() {
   useEffect(() => {
     if (mode !== "simulation") return;
     const current = currentSteps[step];
-    setActiveNode(current.node);
     setEventLabel(current.title);
   }, [mode, step, currentSteps]);
 
@@ -410,7 +384,6 @@ export default function SimulationPage() {
   function setSimulationMode(nextMode: Mode) {
     setPlaying(false);
     setMode(nextMode);
-    setActiveNode(nextMode === "simulation" ? currentSteps[step].node : -1);
     setEventLabel(nextMode === "simulation" ? currentSteps[step].title : "Menunggu aktivitas MQTT");
   }
 
@@ -418,7 +391,6 @@ export default function SimulationPage() {
     setPlaying(false);
     setScenario(nextScenario);
     setStep(0);
-    setActiveNode(simulationScenarios[nextScenario].steps[0].node);
     setEventLabel(simulationScenarios[nextScenario].steps[0].title);
   }
 
@@ -438,72 +410,10 @@ export default function SimulationPage() {
       }
       setCommandStatus(`Perintah ${command} terkirim. Menunggu status balik dari perangkat.`);
       setEventLabel(`Dashboard mengirim ${command} ke perangkat`);
-      setActiveNode(0);
       appendLog(topic, command);
     });
   }
 
-  useEffect(() => {
-    const canvas = topologyCanvasRef.current;
-    if (!canvas) return;
-
-    const updateConnectorPaths = () => {
-      const bounds = canvas.getBoundingClientRect();
-      const routerA = routerANodeRef.current?.getBoundingClientRect();
-      const wan = wanNodeRef.current?.getBoundingClientRect();
-      const emqx = emqxNodeRef.current?.getBoundingClientRect();
-      const vercel = vercelNodeRef.current?.getBoundingClientRect();
-      const routerB = routerBNodeRef.current?.getBoundingClientRect();
-      if (bounds.width === 0 || bounds.height === 0 || !routerA || !wan || !emqx || !vercel || !routerB) return;
-
-      const box = (rect: DOMRect) => ({
-        left: rect.left - bounds.left,
-        right: rect.right - bounds.left,
-        top: rect.top - bounds.top,
-        bottom: rect.bottom - bounds.top,
-        cx: rect.left - bounds.left + rect.width / 2,
-        cy: rect.top - bounds.top + rect.height / 2,
-      });
-      const garage = box(routerA);
-      const internet = box(wan);
-      const broker = box(emqx);
-      const website = box(vercel);
-      const user = box(routerB);
-      // Keep the two routes in separate lanes in the gutter between both zones.
-      const routeLaneCenter = (garage.right + user.left) / 2;
-      const garageLaneX = routeLaneCenter - 8;
-      const userLaneX = routeLaneCenter + 8;
-      // Reserve a clear connector bridge below the cloud zone so paths never
-      // run through the protocol legend or the lower zone cards.
-      const garageLaneY = internet.bottom + 28;
-      const userLaneY = internet.bottom + 46;
-
-      const nextSize = { width: bounds.width, height: bounds.height };
-      const nextPaths = {
-        garageToWan: `M ${garage.right} ${garage.cy} H ${garageLaneX} V ${garageLaneY} H ${internet.cx - 14} V ${internet.bottom}`,
-        wanToEmqx: `M ${internet.left} ${internet.cy} H ${broker.right}`,
-        userToWan: `M ${user.left} ${user.cy} H ${userLaneX} V ${userLaneY} H ${internet.cx + 14} V ${internet.bottom}`,
-        wanToVercel: `M ${internet.right} ${internet.cy} H ${website.left}`,
-      };
-      setTopologySize((current) => current.width === nextSize.width && current.height === nextSize.height ? current : nextSize);
-      setConnectorPaths((current) => current.garageToWan === nextPaths.garageToWan && current.wanToEmqx === nextPaths.wanToEmqx && current.userToWan === nextPaths.userToWan && current.wanToVercel === nextPaths.wanToVercel ? current : nextPaths);
-    };
-
-    const observer = typeof ResizeObserver === "undefined" ? null : new ResizeObserver(updateConnectorPaths);
-    if (observer) {
-      observer.observe(canvas);
-      [routerANodeRef.current, wanNodeRef.current, emqxNodeRef.current, vercelNodeRef.current, routerBNodeRef.current].forEach((node) => {
-        if (node) observer.observe(node);
-      });
-    }
-    window.addEventListener("resize", updateConnectorPaths);
-    updateConnectorPaths();
-
-    return () => {
-      observer?.disconnect();
-      window.removeEventListener("resize", updateConnectorPaths);
-    };
-  }, [mode, scenario]);
 
   async function logout() {
     if (supabase) await supabase.auth.signOut();
@@ -523,45 +433,62 @@ export default function SimulationPage() {
 
   const activeSimulationStep = currentSteps[step];
   const event = mode === "simulation" ? activeSimulationStep.event : eventLabel;
-  const simulatedDevicePowered = scenario !== "power_out" || (backupPowerOn && step < 3);
+  const simulatedDevicePowered = scenario !== "power_out" || backupPowerOn;
   const displayTemperature = mode === "simulation" ? simulatedDevicePowered ? 24.2 + step * 0.3 : null : temperature;
   const displayHumidity = mode === "simulation" ? simulatedDevicePowered ? 58.4 + step * 0.4 : null : humidity;
   const displayDoorState = mode === "simulation" ? (step === 2 ? "open" : "closed") : doorState;
-  const displayRfid = mode === "simulation" ? "JTD-DEMO-042" : rfidValue;
   const powerOutDescriptions = backupPowerOn
     ? [
-        "PLN padam, tetapi UPS masih menyuplai ESP32 dan router. RFID, reed switch, servo, dan server lokal dapat bertahan selama baterai cukup.",
-        "UPS perlu menyuplai ESP32 dan router. Modem/ONT juga perlu UPS bila akses VPN/DDNS dari luar ingin tetap tersedia.",
-        "Akses kartu dan pembacaan posisi pintu berjalan sementara. Gerbang tetap hanya bergerak bila suplai servo juga tersedia.",
-        "Anggap baterai UPS habis di tahap ini: ESP32 dan server lokal mati. Gunakan akses mekanis; akses remote juga terputus.",
+        "PLN padam. Dengan UPS dinyalakan, simulasi menganggap ESP32 dan Router A tetap mendapat daya.",
+        "ESP32 tetap membaca DHT22 dan melayani halaman lokal HTTP port 80.",
+        "Router A menjaga Wi-Fi/LAN garasi selama UPS masih menyuplai perangkat jaringan tersebut.",
+        "HP di Router A dapat memantau langsung. Akses dari Router B perlu Router B dan link intranet antar-router tetap menyala.",
       ]
     : [
-        "PLN padam tanpa UPS. ESP32, RC522, reed switch, servo, dan router mati; sistem elektronik tidak dapat mengendalikan gerbang.",
-        "UPS tidak tersedia. Tidak ada daya untuk ESP32 dan router; jangan mengandalkan monitoring elektronik.",
-        "Tanpa UPS, akses RFID dan servo tetap tidak aktif. Gunakan mekanisme manual yang aman.",
-        "Web server lokal dan akses remote tidak tersedia. Gunakan kunci atau pelepas mekanis pada gerbang.",
+        "PLN padam dan UPS mati. ESP32 serta Router A kehilangan daya; tidak ada pembacaan sensor atau kontrol relay.",
+        "Server lokal ESP32 ikut mati karena tidak mendapat catu daya.",
+        "Router A tidak memancarkan Wi-Fi/LAN, sehingga jalur intranet dari Router B tidak dapat mencapai ESP32.",
+        "Dashboard tidak menerima data live. Pulihkan daya atau gunakan prosedur akses manual yang aman.",
       ];
   const activeSimulationDescription = scenario === "power_out" ? powerOutDescriptions[step] : activeSimulationStep.description;
-  const routeProgress = mode !== "simulation"
-    ? -1
-    : scenario === "normal"
-      ? activeNode
-      : scenario === "web_down"
-        ? step === 1 ? 0 : step === 2 ? 1 : step === 3 ? 3 : -1
-        : backupPowerOn && step === 2 ? 0 : -1;
-  const localRouteActive = mode === "simulation" && simulatedDevicePowered && (
-    (scenario === "web_down" && step === 3) ||
-    (scenario === "power_out" && backupPowerOn && step === 3)
-  );
-  const cloudPathDown = mode === "simulation" && (scenario === "web_down" || (scenario === "power_out" && !simulatedDevicePowered));
+  const localRouteActive = mode === "simulation" && simulatedDevicePowered && (scenario === "web_down" || scenario === "power_out");
+  const cloudPathDown = mode === "simulation" && scenario === "web_down";
   const cloudPathConditional = mode === "simulation" && scenario === "power_out" && simulatedDevicePowered;
-  const topologyLineColor = scenario === "normal" ? "#0891b2" : scenario === "power_out" && backupPowerOn ? "#d97706" : "#e11b48";
-  const routeNodes = [
-    { icon: KeyRound, title: "RC522 membaca UID", detail: "Kartu/tag RFID 13,56 MHz" },
-    { icon: Activity, title: "ESP32 validasi", detail: "Cek UID pada allow-list lokal" },
-    { icon: RotateCw, title: "Servo bergerak", detail: "Buka/tutup gerbang model" },
-    { icon: DoorClosed, title: "Reed konfirmasi", detail: "Posisi fisik tampil di web lokal" },
-  ];
+  const cloudRouteActive = mode === "realtime" || (mode === "simulation" && scenario === "normal");
+  const localRouterRouteActive = mode === "simulation" && (scenario === "web_down" || (scenario === "power_out" && backupPowerOn));
+  const routeNodes = mode === "realtime" || scenario === "normal"
+    ? [
+        { icon: Activity, title: "ESP32", detail: "DHT22 + relay · telemetry" },
+        { icon: Wifi, title: "Router A", detail: "Wi-Fi garasi" },
+        { icon: Cloud, title: "Internet / WAN", detail: "Jalur ke broker" },
+        { icon: Activity, title: "EMQX Cloud", detail: "MQTT TLS 8883" },
+        { icon: Gauge, title: "Dashboard Vercel", detail: "UI HTTPS ? browser lanjut ke EMQX WSS" },
+        { icon: Home, title: "Pengguna · Router B", detail: "MQTT client di browser ? Router B" },
+      ]
+    : scenario === "web_down"
+      ? [
+          { icon: Activity, title: "ESP32 WebServer", detail: "Dashboard lokal · HTTP :80" },
+          { icon: Wifi, title: "Router A", detail: "Wi-Fi / LAN garasi" },
+          { icon: ArrowRight, title: "Link intranet A ↔ B", detail: "Routing / VPN harus aktif" },
+          { icon: Wifi, title: "Router B", detail: "Jaringan pengguna" },
+          { icon: Home, title: "Browser pengguna", detail: "Buka IP lokal ESP32" },
+        ]
+      : backupPowerOn
+        ? [
+            { icon: Power, title: "PLN padam", detail: "Sumber utama mati" },
+            { icon: Power, title: "UPS menyala", detail: "Menyuplai ESP32 + Router A" },
+            { icon: Activity, title: "ESP32 lokal", detail: "Sensor + HTTP :80 aktif" },
+            { icon: Wifi, title: "Router A \u2194 B", detail: "Intranet/VPN + Router B perlu daya" },
+            { icon: Home, title: "Dashboard lokal", detail: "Buka alamat IP ESP32" },
+          ]
+        : [
+            { icon: Power, title: "PLN padam", detail: "Daya utama terputus" },
+            { icon: Power, title: "UPS mati", detail: "Tidak ada daya cadangan" },
+            { icon: Activity, title: "ESP32 + Router A", detail: "Mati · tidak ada data live" },
+            { icon: WifiOff, title: "Jalur monitoring", detail: "Lokal dan cloud terputus" },
+            { icon: Home, title: "Akses manual", detail: "Dashboard tidak tersedia" },
+          ];
+  const routeProgress = mode === "realtime" ? (mqttConnected ? routeNodes.length - 1 : -1) : Math.round((step / Math.max(1, currentSteps.length - 1)) * (routeNodes.length - 1));
 
 
 
@@ -658,25 +585,16 @@ export default function SimulationPage() {
               <button type="button" onClick={() => void toggleFullscreen()} className="inline-flex items-center gap-2 rounded-lg border border-slate-700 px-3 py-2 text-xs font-medium text-slate-300 hover:border-cyan-300/40 hover:text-white"><Maximize2 size={14} />{fullscreen ? "Keluar layar penuh" : "Layar penuh (F)"}</button>
             </div>
 
-            <div ref={topologyCanvasRef} className="relative rounded-2xl border border-slate-300 bg-slate-50 p-3 text-slate-800 shadow-inner sm:p-5">
-              <svg aria-hidden="true" className="pointer-events-none absolute inset-0 z-10 hidden h-full w-full overflow-visible xl:block" viewBox={`0 0 ${topologySize.width} ${topologySize.height}`} preserveAspectRatio="none">
-                <defs>
-                  <marker id="topology-mqtt-arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M 0 0 L 10 5 L 0 10 z" fill={scenario === "normal" ? "#0891b2" : topologyLineColor} /></marker>
-                  <marker id="topology-web-arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M 0 0 L 10 5 L 0 10 z" fill={scenario === "normal" ? "#0d9488" : topologyLineColor} /></marker>
-                  <filter id="topology-packet-glow" x="-100%" y="-100%" width="300%" height="300%"><feGaussianBlur stdDeviation="3" result="blur" /><feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge></filter>
-                </defs>
-                {Object.entries(connectorPaths).map(([key, path]) => path && <path key={key} d={path} fill="none" stroke={scenario === "normal" ? key === "garageToWan" || key === "wanToEmqx" ? "#0891b2" : "#0d9488" : topologyLineColor} strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" markerEnd={key === "garageToWan" || key === "wanToEmqx" ? "url(#topology-mqtt-arrow)" : "url(#topology-web-arrow)"} />)}
-                {mode === "simulation" && playing && scenario === "normal" && Object.entries(connectorPaths).map(([key, path], index) => path && <circle key={`packet-${key}`} r="6" fill={index < 2 ? "#06b6d4" : "#14b8a6"} filter="url(#topology-packet-glow)"><animateMotion dur={`${2.2 + index * 0.35}s`} repeatCount="indefinite" path={path} /></circle>)}
-              </svg>
-              <section className={`rounded-xl border-2 border-dashed p-3 sm:p-4 ${scenario === "web_down" || (scenario === "power_out" && !backupPowerOn) ? "border-rose-300 bg-rose-50" : scenario === "power_out" && backupPowerOn ? "border-amber-300 bg-amber-50" : "border-sky-300 bg-sky-50"}`}>
+            <div className="relative rounded-2xl border border-slate-300 bg-slate-50 p-3 text-slate-800 shadow-inner sm:p-5">
+              <section className={`rounded-xl border-2 border-dashed p-3 sm:p-4 ${scenario === "web_down" && mode === "simulation" ? "border-rose-300 bg-rose-50" : scenario === "power_out" && backupPowerOn && mode === "simulation" ? "border-amber-300 bg-amber-50" : "border-sky-300 bg-sky-50"}`}>
                 <div className="mb-3 flex flex-wrap items-start justify-between gap-2"><div><p className="text-[9px] font-bold uppercase tracking-[0.16em] text-sky-800">Zona internet &amp; cloud</p>
                   <div><h3 className="text-xs font-extrabold sm:text-sm">Layanan jarak jauh</h3><p className="mt-1 text-[10px] text-slate-600 sm:text-xs">EMQX adalah broker MQTT; Vercel meng-host website. Keduanya layanan berbeda.</p></div></div>
-                  <span className={`rounded-full px-2.5 py-1 text-[9px] font-bold uppercase ${cloudPathDown ? "bg-rose-100 text-rose-800" : cloudPathConditional ? "bg-amber-100 text-amber-800" : "bg-emerald-100 text-emerald-800"}`}>{scenario === "web_down" ? "Cloud down" : scenario === "power_out" && !simulatedDevicePowered ? "Tidak ada telemetry" : scenario === "power_out" ? "Tergantung UPS + WAN" : "Jalur normal"}</span>
+                  <span className={`rounded-full px-2.5 py-1 text-[9px] font-bold uppercase ${cloudPathDown ? "bg-rose-100 text-rose-800" : cloudPathConditional ? "bg-amber-100 text-amber-800" : "bg-emerald-100 text-emerald-800"}`}>{scenario === "web_down" && mode === "simulation" ? "Cloud down \u00b7 jalur lokal" : scenario === "power_out" && !backupPowerOn ? "ESP32 offline \u00b7 cloud tetap ada" : scenario === "power_out" ? "UPS aktif \u00b7 intranet bersyarat" : "Jalur normal"}</span>
                 </div>
                 <div className="grid gap-2 xl:grid-cols-[minmax(0,1fr)_190px_minmax(0,1fr)]">
-                  <div ref={emqxNodeRef} className="relative z-20"><TopologyDevice icon={Cloud} title="EMQX Cloud" detail="Broker MQTT · TLS 8883 / WSS 8084 · topik esp32/garasi" state={mode === "realtime" ? mqttConnected ? "active" : "standby" : scenario === "normal" ? "active" : scenario === "web_down" || !simulatedDevicePowered ? "down" : "conditional"} stateText={mode === "realtime" ? mqttConnected ? "Terhubung" : "Menunggu" : scenario === "normal" ? "Aktif" : scenario === "web_down" || !simulatedDevicePowered ? "Down" : "Kondisional"} /></div>
-                  <div ref={wanNodeRef} className={`relative z-20 flex min-h-[74px] flex-col items-center justify-center rounded-xl border px-3 py-2 text-center shadow-sm ${cloudPathDown ? "border-rose-200 bg-rose-50 text-rose-800" : cloudPathConditional ? "border-amber-200 bg-amber-50 text-amber-800" : "border-sky-200 bg-white text-sky-900"}`}><Cloud size={19} className={mode === "simulation" && playing && scenario === "normal" ? "animate-pulse" : ""} /><strong className="mt-1 text-xs">Internet / WAN</strong><span className="text-[9px]">Jalur antarjaringan</span></div>
-                  <div ref={vercelNodeRef} className="relative z-20"><TopologyDevice icon={Gauge} title="Dashboard Vercel" detail="Next.js · dibuka pengguna melalui browser" state={mode === "realtime" ? "active" : scenario === "normal" ? "active" : scenario === "power_out" && simulatedDevicePowered ? "conditional" : "down"} stateText={mode === "realtime" ? "Website" : scenario === "normal" ? "Aktif" : scenario === "power_out" && simulatedDevicePowered ? "Kondisional" : "Down"} /></div>
+                  <div className="relative z-20"><TopologyDevice icon={Cloud} title="EMQX Cloud" detail="Broker MQTT · TLS 8883 / WSS 8084 · topik esp32/garasi" state={scenario === "web_down" && mode === "simulation" ? "down" : "active"} stateText={scenario === "web_down" && mode === "simulation" ? "Tidak tersedia" : mode === "realtime" && mqttConnected ? "Terhubung" : "Layanan aktif"} /></div>
+                  <div className={`relative z-20 flex min-h-[74px] flex-col items-center justify-center rounded-xl border px-3 py-2 text-center shadow-sm ${cloudPathDown ? "border-rose-200 bg-rose-50 text-rose-800" : cloudPathConditional ? "border-amber-200 bg-amber-50 text-amber-800" : "border-sky-200 bg-white text-sky-900"}`}><Cloud size={19} className={mode === "simulation" && playing && scenario === "normal" ? "animate-pulse" : ""} /><strong className="mt-1 text-xs">Internet / WAN</strong><span className="text-[9px]">Jalur antarjaringan</span></div>
+                  <div className="relative z-20"><TopologyDevice icon={Gauge} title="Dashboard Vercel" detail="Next.js · dibuka pengguna melalui browser" state={scenario === "web_down" && mode === "simulation" ? "down" : "active"} stateText={scenario === "web_down" && mode === "simulation" ? "Tidak tersedia" : "Website aktif"} /></div>
                 </div>
               </section>
 
@@ -685,90 +603,61 @@ export default function SimulationPage() {
                 <section className={`rounded-xl border-2 border-dashed p-3 sm:p-4 ${!simulatedDevicePowered && mode === "simulation" ? "border-rose-300 bg-rose-50" : "border-amber-300 bg-amber-50"}`}>
                   <div className="mb-3"><p className="text-[9px] font-bold uppercase tracking-[0.16em]">Zona perangkat</p><h3 className="text-xs font-extrabold sm:text-sm">Area garasi · Router A</h3><p className="mt-1 text-[10px] text-slate-600 sm:text-xs">Wi-Fi perangkat dan akses lokal</p></div>
                     <div className="grid gap-2">
-                    <div className="grid gap-1">
-                      <TopologyDevice icon={KeyRound} title="RFID RC522" detail="Membaca UID kartu/tag 13,56 MHz melalui SPI." state={mode === "simulation" ? !simulatedDevicePowered ? "down" : routeProgress === 0 ? "active" : "standby" : "standby"} stateText={mode === "simulation" ? !simulatedDevicePowered ? "Mati" : routeProgress === 0 ? "Tap kartu" : "Pembaca" : "SPI"} />
-                      <span className={`justify-self-center text-lg font-bold ${mode === "simulation" && routeProgress === 0 ? "animate-bounce text-cyan-700" : "text-slate-300"}`} aria-hidden="true">↓</span>
-                      <div ref={esp32NodeRef} className="relative z-20"><TopologyDevice icon={Activity} title="ESP32" detail="Memeriksa UID pada daftar kartu yang diizinkan; menjalankan web server lokal port 80." state={mode === "simulation" ? simulatedDevicePowered ? routeProgress === 1 ? "active" : "standby" : "down" : mqttConnected ? "active" : "standby"} stateText={mode === "simulation" ? simulatedDevicePowered ? routeProgress === 1 ? "Validasi" : "Kontrol" : "Mati" : mqttConnected ? "Online" : "Siap lokal"} /></div>
-                      <span className={`justify-self-center text-lg font-bold ${mode === "simulation" && routeProgress === 1 ? "animate-bounce text-cyan-700" : "text-slate-300"}`} aria-hidden="true">↓</span>
-                      <TopologyDevice icon={RotateCw} title="Servo gerbang" detail="Menggerakkan model gerbang ke posisi buka/tutup; perlu catu daya 5 V terpisah." state={mode === "simulation" ? !simulatedDevicePowered ? "down" : routeProgress === 2 ? "active" : "standby" : "standby"} stateText={mode === "simulation" ? !simulatedDevicePowered ? "Mati" : routeProgress === 2 ? "Bergerak" : "Aktuator" : "PWM"} />
+                      <div className="relative z-20"><TopologyDevice icon={Activity} title="ESP32 + DHT22 + relay" detail="Publish suhu/kelembapan MQTT; menyediakan dashboard HTTP lokal :80." state={mode === "simulation" && !simulatedDevicePowered ? "down" : mode === "realtime" && mqttConnected ? "active" : localRouterRouteActive ? "active" : "standby"} stateText={mode === "simulation" && !simulatedDevicePowered ? "Mati" : mode === "realtime" ? mqttConnected ? "MQTT live" : "Siap lokal" : localRouterRouteActive ? "Lokal aktif" : "Perangkat"} /></div>
+                      <div className={`flex flex-col items-center gap-1 py-1 text-[10px] font-semibold ${localRouterRouteActive ? "text-emerald-700" : cloudRouteActive ? "text-cyan-700" : "text-slate-400"}`}><ArrowRight className="rotate-90" size={18} /><span>Wi-Fi / LAN garasi</span></div>
+                      <div className="relative z-20"><TopologyDevice icon={Wifi} title="Router A" detail="Gateway lokal ESP32; meneruskan MQTT ke WAN saat tersedia." state={mode === "simulation" && !simulatedDevicePowered ? "down" : scenario === "power_out" && backupPowerOn ? "conditional" : "active"} stateText={mode === "simulation" && !simulatedDevicePowered ? "Mati" : scenario === "power_out" && backupPowerOn ? "UPS" : "LAN aktif"} /></div>
                     </div>
-                    <div className={`flex flex-wrap items-center justify-center gap-2 rounded-lg border border-dashed px-2 py-2 text-center text-[10px] ${mode === "simulation" && routeProgress === 3 ? "animate-pulse border-cyan-400 bg-cyan-50 text-cyan-900" : "border-slate-300 bg-white/70 text-slate-600"}`}><DoorClosed size={14} /><strong>Reed switch di kusen</strong><span>· GPIO 4 · INPUT_PULLUP</span><span>→ memberi status pintu sebenarnya kembali ke ESP32</span></div>
-                    <div className="mt-2 grid justify-items-center gap-1"><span className={`text-base font-black text-cyan-700 ${mode === "simulation" && playing && scenario === "normal" ? "animate-bounce" : ""}`} aria-hidden="true">&darr;</span><div ref={routerANodeRef} className="relative z-20 w-full"><TopologyDevice icon={Wifi} title="Router A" detail="Wi-Fi / LAN garasi &middot; gateway ke internet" state={mode === "simulation" && !simulatedDevicePowered ? "down" : mode === "simulation" && scenario === "power_out" ? "conditional" : "active"} stateText={mode === "simulation" && !simulatedDevicePowered ? "Mati" : mode === "simulation" && scenario === "power_out" ? "UPS" : "Gateway"} /></div><span className="text-[9px] font-semibold text-slate-500">ESP32 &harr; Wi-Fi / LAN &harr; WAN</span></div>
-                  </div>
                 </section>
 
                 <section className="rounded-xl border-2 border-dashed border-teal-300 bg-teal-50 p-3 sm:p-4">
                   <div className="mb-3"><p className="text-[9px] font-bold uppercase tracking-[0.16em]">Zona pengguna</p><h3 className="text-xs font-extrabold sm:text-sm">Area pengguna · Router B</h3><p className="mt-1 text-[10px] text-slate-600 sm:text-xs">HP / laptop mengakses dashboard</p></div>
                   <div className="grid gap-2">
-                    <div ref={routerBNodeRef} className="relative z-20"><TopologyDevice icon={Wifi} title="Router B / Internet pengguna" detail="Jaringan pengguna berbeda; jalur cloud memakai internet. Akses IP lokal butuh WireGuard jika dikonfigurasi." state={scenario === "normal" || mode === "realtime" ? "active" : scenario === "power_out" && simulatedDevicePowered ? "conditional" : "standby"} stateText={scenario === "normal" || mode === "realtime" ? "Internet" : scenario === "power_out" && simulatedDevicePowered ? "Kondisional" : "Terpisah"} /></div>
-                    <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-1 text-center text-[9px] font-semibold text-slate-500 sm:text-[10px]"><span>Browser</span><span className="text-slate-400">&rarr;</span><span>Vercel / MQTT WSS</span></div>
-                    <TopologyDevice icon={Home} title="Dashboard HP / laptop" detail={mode === "simulation" && scenario !== "normal" && simulatedDevicePowered ? "Akses halaman ESP32 dari Wi-Fi lokal; dari luar perlu VPN MikroTik." : mode === "simulation" && !simulatedDevicePowered ? "Offline; operasikan gerbang secara manual." : "Pantau status reed switch dan kirim perintah buka/tutup."} state={mode === "simulation" ? !simulatedDevicePowered ? "down" : scenario === "normal" ? "active" : "conditional" : mqttConnected ? "active" : "standby"} stateText={mode === "simulation" ? !simulatedDevicePowered ? "Offline" : scenario === "normal" ? "Remote" : "Pakai lokal" : mqttConnected ? "Live" : "Menunggu"} />
+                    <div className="relative z-20"><TopologyDevice icon={Wifi} title="Router B / jaringan pengguna" detail={localRouterRouteActive ? "Akses dashboard ESP32 lewat link intranet/VPN Router A\u2013B yang sudah aktif." : "Jalur internet pengguna untuk membuka Vercel dan koneksi MQTT WSS."} state={mode === "simulation" && !simulatedDevicePowered ? "standby" : localRouterRouteActive ? "active" : scenario === "power_out" && backupPowerOn ? "conditional" : "active"} stateText={mode === "simulation" && !simulatedDevicePowered ? "Cek daya" : localRouterRouteActive ? "Intranet" : scenario === "power_out" && backupPowerOn ? "Bersyarat" : "Internet"} /></div>
+                    <div className={`flex flex-col items-center gap-1 py-1 text-[10px] font-semibold ${localRouterRouteActive ? "text-emerald-700" : cloudRouteActive ? "text-teal-700" : "text-slate-400"}`}><ArrowRight className="rotate-90" size={18} /><span>{localRouterRouteActive ? "Link intranet / VPN" : "Browser / internet"}</span></div>
+                    <div className="relative z-20"><TopologyDevice icon={Home} title={localRouterRouteActive ? "Dashboard lokal ESP32" : "Dashboard HP / laptop"} detail={mode === "simulation" && scenario === "web_down" && simulatedDevicePowered ? "Buka IP lokal ESP32 dari jaringan Router B melalui link intranet/VPN." : mode === "simulation" && scenario === "power_out" && !simulatedDevicePowered ? "Offline. Tidak ada telemetry live; gunakan akses manual." : mode === "simulation" && scenario === "power_out" ? "Dashboard lokal tersedia bila Router B dan link antar-router juga mendapat daya." : mode === "simulation" && scenario === "normal" ? "Pantau telemetry dari Vercel; perintah relay kembali melalui EMQX." : "Vercel menyajikan UI; MQTT WSS membawa telemetry dan perintah."} state={mode === "simulation" && !simulatedDevicePowered ? "down" : localRouterRouteActive ? "active" : mode === "simulation" && scenario === "power_out" ? "conditional" : mqttConnected ? "active" : "standby"} stateText={mode === "simulation" && !simulatedDevicePowered ? "Offline" : localRouterRouteActive ? "Lokal" : mode === "simulation" && scenario === "power_out" ? "Bersyarat" : mqttConnected ? "Live" : "Menunggu"} /></div>
                   </div>
                 </section>
               </div>
 
-              <div className="mt-3 flex flex-wrap items-center justify-center gap-x-5 gap-y-1 rounded-lg border border-slate-200 bg-white/90 px-3 py-2 text-[9px] font-semibold text-slate-600 sm:text-[10px]">
-                <span className="inline-flex items-center gap-1.5"><i className="h-1 w-5 rounded bg-cyan-600" /> MQTT TLS 8883 &middot; ESP32 &harr; EMQX</span>
-                <span className="inline-flex items-center gap-1.5"><i className="h-1 w-5 rounded bg-teal-600" /> HTTPS ke Vercel &middot; MQTT WSS 8084 ke EMQX</span>
-              </div>
+              <section className="mt-3 rounded-xl border border-slate-200 bg-white p-3 sm:p-4" aria-label="Alur jaringan skenario aktif">
+                <div className="flex flex-wrap items-start justify-between gap-2">
+                  <div>
+                    <h3 className="text-xs font-extrabold sm:text-sm">{mode === "realtime" ? "Alur real-time: sensor dan perintah relay" : `Alur simulasi: ${simulationScenarios[scenario].label}`}</h3>
+                    <p className="mt-1 text-[10px] text-slate-500 sm:text-xs">Ikuti setiap segmen dari sumber sampai dashboard; panah menunjukkan arah jalurnya.</p>
+                  </div>
+                  <span className={`rounded-full px-2.5 py-1 text-[9px] font-bold uppercase ${!simulatedDevicePowered && mode === "simulation" ? "bg-rose-100 text-rose-800" : localRouterRouteActive ? "bg-emerald-100 text-emerald-800" : cloudPathConditional ? "bg-amber-100 text-amber-800" : mqttConnected && mode === "realtime" ? "bg-emerald-100 text-emerald-800" : "bg-sky-100 text-sky-800"}`}>
+                    {!simulatedDevicePowered && mode === "simulation" ? "Tidak ada monitoring live" : scenario === "web_down" && mode === "simulation" ? "Jalur lokal tanpa cloud" : cloudPathConditional ? "Lokal aktif; remote bersyarat" : mode === "realtime" ? mqttConnected ? "MQTT terhubung" : "Menunggu MQTT" : "Jalur cloud aktif"}
+                  </span>
+                </div>
 
-              <section className="mt-3 rounded-xl border border-slate-200 bg-white p-3 sm:p-4" aria-label="Jalur komunikasi real-time">
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <div><h3 className="text-xs font-extrabold sm:text-sm">Alur akses kartu dan verifikasi gerbang</h3><p className="mt-1 text-[10px] text-slate-500 sm:text-xs">Panah bergerak mengikuti tahap yang sedang diputar</p></div>
-                  <span className={`rounded-full px-2.5 py-1 text-[9px] font-bold uppercase ${cloudPathDown ? "bg-rose-50 text-rose-800" : cloudPathConditional ? "bg-amber-50 text-amber-800" : "bg-cyan-50 text-cyan-800"}`}>{cloudPathDown ? "Jalur remote terputus · lokal tetap" : cloudPathConditional ? "Remote tergantung UPS + WAN" : "Alur perangkat lokal"}</span>
+                <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-stretch sm:gap-1.5">
+                  {routeNodes.map((node, index) => {
+                    const isOffline = mode === "simulation" && scenario === "power_out" && !backupPowerOn;
+                    const isReached = routeProgress >= index && !isOffline;
+                    const isCurrent = routeProgress === index && !isOffline;
+                    return <Fragment key={node.title}>
+                      <article className={`min-w-0 flex-1 rounded-lg border p-2.5 transition-all duration-500 ${isOffline ? "border-rose-200 bg-rose-50 text-rose-800" : isCurrent ? "animate-pulse border-cyan-400 bg-cyan-50 text-cyan-900 shadow-md shadow-cyan-100" : isReached ? "border-emerald-200 bg-emerald-50 text-emerald-900" : "border-slate-200 bg-slate-50 text-slate-700"}`}>
+                        <div className="flex items-start gap-2"><span className="grid h-7 w-7 shrink-0 place-items-center rounded-md bg-white"><node.icon size={15} /></span><div className="min-w-0"><p className="text-[9px] font-bold uppercase tracking-wide opacity-60">Segmen {index + 1}</p><strong className="block text-[11px] leading-4">{node.title}</strong></div></div>
+                        <p className="mt-2 text-[9px] leading-4 opacity-75 sm:text-[10px]">{node.detail}</p>
+                      </article>
+                      {index < routeNodes.length - 1 && <span className={`flex shrink-0 items-center justify-center rounded-full ${isOffline ? "text-rose-400" : isReached ? "animate-pulse text-cyan-600" : "text-slate-300"}`} aria-hidden="true">{isOffline ? <WifiOff size={17} /> : <><ArrowRight className="hidden sm:block" size={18} /><ArrowRight className="rotate-90 sm:hidden" size={18} /></>}</span>}
+                    </Fragment>;
+                  })}
                 </div>
-                <div className="mt-3 grid gap-1 md:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)_auto_minmax(0,1fr)_auto_minmax(0,1fr)] md:items-center">
-                  {routeNodes.map((node, index) => (
-                    <Fragment key={node.title}>
-                      <div className={`rounded-lg border p-2.5 transition-all duration-500 ${mode === "simulation" && !simulatedDevicePowered ? "border-rose-200 bg-rose-50 text-rose-800" : routeProgress === index ? "border-cyan-400 bg-cyan-50 text-cyan-900 shadow-md shadow-cyan-100" : "border-slate-200 bg-slate-50 text-slate-700"}`}>
-                        <div className="flex items-center gap-2"><node.icon size={15} /><strong className="text-[11px]">{node.title}</strong></div>
-                        <p className="mt-1 text-[9px] leading-4 opacity-75 sm:text-[10px]">{node.detail}</p>
-                      </div>
-                      {index < routeNodes.length - 1 && <span className={`justify-self-center text-lg font-bold transition-colors ${mode === "simulation" && !simulatedDevicePowered ? "text-rose-400" : routeProgress > index ? "animate-pulse text-cyan-600" : "text-slate-300"}`} aria-hidden="true">{mode === "simulation" && !simulatedDevicePowered ? "×" : <><span className="md:hidden">↓</span><span className="hidden md:inline">→</span></>}</span>}
-                    </Fragment>
-                  ))}
-                </div>
+
                 <div className="mt-3 grid gap-2 border-t border-slate-100 pt-3 sm:grid-cols-2">
-                  <p className="text-[10px] leading-4 text-slate-600"><strong className="text-violet-800">Umpan balik pintu:</strong> reed switch → ESP32 → status OPEN/CLOSED pada web server.</p>
-                  <p className="text-[10px] leading-4 text-slate-600"><strong className="text-sky-800">Akses remote:</strong> HP/laptop → internet → VPN MikroTik → web server ESP32. DDNS hanya nama alamat; bukan VPN.</p>
+                  <p className="text-[10px] leading-4 text-slate-600"><strong className="text-cyan-800">{mode === "simulation" && scenario === "web_down" ? "Dashboard cadangan:" : "Telemetry:"}</strong> {mode === "simulation" && scenario === "web_down" ? "Halaman HTTP disajikan ESP32 di port 80. Router B hanya dapat membukanya jika link intranet/WireGuard Router A\u2013B sudah aktif; alamat yang dibuka adalah IP lokal ESP32, bukan Vercel." : mode === "simulation" && scenario === "power_out" ? backupPowerOn ? "UPS pada simulasi menyuplai ESP32 dan Router A. Akses dari Router B tetap mensyaratkan router B serta link antar-router mendapat daya." : "UPS mati: ESP32 dan Router A tidak mengirim data. Dashboard tidak punya telemetry baru; gunakan akses manual." : "Telemetry: ESP32 \u2192 Router A \u2192 Internet \u2192 EMQX \u2192 browser (MQTT WSS). UI dimuat terpisah dari Vercel; perintah kembali melalui EMQX ke ESP32."}</p>
+                  <p className="text-[10px] leading-4 text-slate-600"><strong className="text-violet-800">Jalur kontrol:</strong> {mode === "simulation" && scenario === "web_down" ? "Dashboard lokal \u2192 Router B \u2192 link intranet/VPN \u2192 Router A \u2192 relay ESP32. Pastikan routing dua arah dan firewall mengizinkan akses." : mode === "simulation" && scenario === "power_out" ? backupPowerOn ? "Lokal berjalan selama UPS dan perangkat jaringan yang diperlukan masih menyala; saat baterai habis jalur berhenti." : "Tanpa suplai UPS, seluruh kontrol elektronik berhenti." : "Browser \u2192 Vercel untuk membuka UI; MQTT WSS ke EMQX untuk melihat telemetry dan mengirim ON/OFF."}</p>
                 </div>
               </section>
-
-              <div className={`mt-3 rounded-xl border p-3 ${scenario === "web_down" || (scenario === "power_out" && backupPowerOn) ? "border-emerald-300 bg-emerald-50" : scenario === "power_out" ? "border-rose-300 bg-rose-50" : "border-slate-200 bg-white"}`}>
-                <div className="flex flex-wrap items-center gap-2 text-[11px] sm:text-xs"><strong className="text-emerald-800">Jalur cadangan lokal:</strong><span className="rounded bg-white px-2 py-1">Server HTTP di ESP32 · port 80</span><span className={localRouteActive ? "animate-pulse font-black text-emerald-700" : "text-slate-400"} aria-hidden="true">&rarr;</span><span>Wi-Fi / LAN Router A</span><span className={localRouteActive ? "animate-pulse font-black text-emerald-700" : "text-slate-400"} aria-hidden="true">&rarr;</span><span>HP / laptop satu jaringan</span><span className="ml-auto font-bold">{!simulatedDevicePowered && mode === "simulation" ? "OFFLINE" : scenario === "web_down" || (scenario === "power_out" && backupPowerOn) ? "AKTIF" : "SIAP"}</span></div>
-                <div className="mt-2 flex flex-wrap items-center gap-2 text-[10px] leading-4 text-slate-600"><span>Alamat: <code className="rounded bg-white px-1.5 py-0.5 text-cyan-800">http://192.168.88.50/</code> (jika DHCP lease tetap disetel; selain itu cek IP di Serial Monitor).</span><span>Jalur ini tidak melewati EMQX atau Vercel.</span></div>
-                <details className="mt-2 border-t border-slate-200 pt-2 text-[10px] leading-4 text-slate-600">
-                  <summary className="cursor-pointer font-bold text-slate-700">Server lokal itu apa dan bagaimana kerjanya?</summary>
-                  <p className="mt-1">Bukan komputer/cloud terpisah. Sesuai proposal, firmware menjalankan HTTP server di ESP32 (port 80), menampilkan status reed switch, dan menerima perintah gerbang. RC522 memvalidasi UID di ESP32; servo membuka gerbang; reed switch mengonfirmasi posisi fisiknya. HP di Wi-Fi/LAN yang sama membuka IP ESP32. Dari luar, gunakan VPN MikroTik; DDNS hanya membantu menemukan alamat router.</p>
-                </details>
-              </div>
             </div>
-
-            {mode === "simulation" && (
-              <div className={`mt-4 rounded-2xl border p-4 ${scenario === "web_down" || (scenario === "power_out" && backupPowerOn) ? "border-emerald-300/30 bg-emerald-300/[0.06]" : scenario === "power_out" ? "border-rose-300/30 bg-rose-300/[0.05]" : "border-slate-700 bg-slate-900/50"}`}>
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                  <div>
-                    <p className={`text-[10px] font-bold uppercase tracking-[0.18em] ${scenario === "web_down" || (scenario === "power_out" && backupPowerOn) ? "text-emerald-200" : scenario === "power_out" ? "text-rose-200" : "text-slate-400"}`}>Jalur cadangan lokal ESP32</p>
-                    <p className="mt-1 text-sm font-semibold text-white">ESP32 WebServer &rarr; HP di Wi-Fi Router A</p>
-                    <p className="mt-1 text-xs leading-5 text-slate-400">Buka <code className="text-cyan-200">http://192.168.88.50/</code> jika DHCP lease tetap sudah disetel. Jika belum, cek alamat IP di Serial Monitor. Dari Router B, akses melalui WireGuard jika WAN tersedia. Jalur lokal ini tidak melewati EMQX atau Vercel.</p>
-                  </div>
-                  <span className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-bold ${scenario === "web_down" || (scenario === "power_out" && backupPowerOn) ? "bg-emerald-300/10 text-emerald-200" : scenario === "power_out" ? "bg-rose-300/10 text-rose-200" : "bg-slate-800 text-slate-400"}`}>{!simulatedDevicePowered ? "Offline - tidak ada UPS" : scenario === "web_down" ? "Aktif - gunakan sekarang" : scenario === "power_out" ? "Aktif sementara - UPS" : "Siap digunakan"}</span>
-                </div>
-              </div>
-            )}
 
             <div className="mt-4 grid gap-3 sm:grid-cols-3">
-              {mode === "simulation" ? <>
-                <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-3"><div className="flex items-center gap-2 text-violet-200"><KeyRound size={15} /><span className="text-xs font-semibold">UID RFID terakhir</span></div><p className="mt-2 break-all text-lg font-semibold">{simulatedDevicePowered ? displayRfid : "OFFLINE"}</p></div>
-                <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-3"><div className="flex items-center gap-2 text-cyan-200"><DoorClosed size={15} /><span className="text-xs font-semibold">Posisi pintu · reed</span></div><p className="mt-2 text-lg font-semibold">{!simulatedDevicePowered ? "OFFLINE" : displayDoorState === "open" ? "TERBUKA" : "TERTUTUP"}</p></div>
-                <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-3"><div className="flex items-center gap-2 text-emerald-200"><RotateCw size={15} /><span className="text-xs font-semibold">Servo gerbang</span></div><p className="mt-2 text-lg font-semibold">{!simulatedDevicePowered ? "OFFLINE" : step === 2 ? "BUKA · 90°" : step === 3 ? "TUTUP OTOMATIS" : "SIAGA"}</p></div>
-              </> : <>
-                <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-3"><div className="flex items-center gap-2 text-cyan-200"><Thermometer size={15} /><span className="text-xs font-semibold">Suhu</span></div><p className="mt-2 text-lg font-semibold">{formatValue(displayTemperature, "\u00b0C")}</p></div>
-                <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-3"><div className="flex items-center gap-2 text-violet-200"><Activity size={15} /><span className="text-xs font-semibold">Kelembapan</span></div><p className="mt-2 text-lg font-semibold">{formatValue(displayHumidity, "%")}</p></div>
-                <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-3"><div className="flex items-center gap-2 text-emerald-200"><Power size={15} /><span className="text-xs font-semibold">Status relay/pintu</span></div><p className="mt-2 text-lg font-semibold">{displayDoorState === "open" ? "ON / TERBUKA" : displayDoorState === "closed" ? "OFF / TERTUTUP" : "Menunggu data"}</p></div>
-              </>}
+              <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-3"><div className="flex items-center gap-2 text-cyan-200"><Thermometer size={15} /><span className="text-xs font-semibold">Suhu DHT22</span></div><p className="mt-2 text-lg font-semibold">{mode === "simulation" && !simulatedDevicePowered ? "OFFLINE" : formatValue(displayTemperature, " \u00b0C")}</p></div>
+              <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-3"><div className="flex items-center gap-2 text-violet-200"><Activity size={15} /><span className="text-xs font-semibold">Kelembapan DHT22</span></div><p className="mt-2 text-lg font-semibold">{mode === "simulation" && !simulatedDevicePowered ? "OFFLINE" : formatValue(displayHumidity, "%")}</p></div>
+              <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-3"><div className="flex items-center gap-2 text-emerald-200"><Power size={15} /><span className="text-xs font-semibold">Relay</span></div><p className="mt-2 text-lg font-semibold">{mode === "simulation" && !simulatedDevicePowered ? "OFFLINE" : displayDoorState === null ? "Menunggu data" : displayDoorState === "open" ? "ON" : "OFF"}</p></div>
             </div>
-            <div className="mt-3 flex items-center gap-2 rounded-xl border border-slate-800 bg-slate-900/40 px-3 py-2.5 text-xs text-slate-400"><Database size={15} className="shrink-0 text-violet-300" /><span><strong className="text-slate-300">{mode === "simulation" ? "Topologi aktif" : "Supabase"}</strong> {mode === "simulation" ? scenario === "normal" ? "ESP32 -> Router A -> EMQX -> dashboard Vercel. Jalur lokal ESP32 tetap tersedia." : scenario === "web_down" ? "Jalur cloud ditandai down; gunakan halaman lokal ESP32. HP harus berada di Wi-Fi Router A atau lewat WireGuard dari Router B." : backupPowerOn ? "UPS menyalakan ESP32 dan Router A sementara. Backup monitoring berakhir saat daya UPS habis." : "Tanpa UPS, ESP32 dan Router A mati. Data tidak diperbarui; gunakan akses mekanis." : "menyimpan akun dan daftar perangkat; telemetry lewat EMQX."}</span></div>
+            <div className="mt-3 flex items-center gap-2 rounded-xl border border-slate-800 bg-slate-900/40 px-3 py-2.5 text-xs text-slate-400"><Database size={15} className="shrink-0 text-violet-300" /><span><strong className="text-slate-300">{mode === "simulation" ? "Topologi aktif" : "Supabase"}</strong> {mode === "simulation" ? scenario === "normal" ? "ESP32 \u2192 Router A \u2192 EMQX \u2192 dashboard Vercel. Jalur lokal ESP32 tetap tersedia." : scenario === "web_down" ? "Jalur cloud ditandai down; gunakan halaman lokal ESP32. HP harus berada di Wi-Fi Router A atau lewat WireGuard dari Router B." : backupPowerOn ? "UPS menyalakan ESP32 dan Router A sementara. Backup monitoring berakhir saat daya UPS habis." : "Tanpa UPS, ESP32 dan Router A mati. Data tidak diperbarui; gunakan akses mekanis." : "menyimpan akun dan daftar perangkat; telemetry lewat EMQX."}</span></div>
             {mode === "simulation" && scenario === "power_out" && <p className="mt-3 text-xs leading-5 text-amber-200/90">Simulasi listrik padam: pembacaan sensor dan kontrol elektronik hanya berlanjut jika UPS juga menyuplai ESP32 dan Router A. Untuk akses lewat Router B, modem/ONT dan koneksi WAN juga perlu tetap hidup.</p>}
           </div>
 
@@ -792,7 +681,6 @@ export default function SimulationPage() {
               <>
                 <div className="mt-4 space-y-3">
                   <div className="rounded-xl border border-slate-800 bg-slate-950/60 p-3"><p className="text-[10px] uppercase tracking-wider text-slate-500">Topic subscription</p><p className="mt-1 break-all font-mono text-xs text-cyan-100">{selectedDevice?.topic_sub || "—"}</p></div>
-                  <div className="rounded-xl border border-slate-800 bg-slate-950/60 p-3"><p className="text-[10px] uppercase tracking-wider text-slate-500">RFID terakhir</p><p className="mt-1 break-all text-sm font-semibold text-violet-100">{displayRfid ?? "Belum ada tap"}</p></div>
                   <div className="rounded-xl border border-slate-800 bg-slate-950/60 p-3"><p className="text-[10px] uppercase tracking-wider text-slate-500">Kelembapan</p><p className="mt-1 text-sm font-semibold text-cyan-100">{formatValue(displayHumidity, "%")}</p></div>
                 </div>
                 {commandStatus && <p className="mt-3 rounded-xl border border-amber-300/15 bg-amber-300/[0.05] p-3 text-xs leading-5 text-amber-100">{commandStatus}</p>}
@@ -809,7 +697,7 @@ export default function SimulationPage() {
           </div>
         </section>
 
-        <p className="mt-4 text-center text-[11px] leading-5 text-slate-600">Mode simulasi mengikuti proposal: RC522 membaca UID, ESP32 memvalidasi kartu, servo menggerakkan gerbang, reed switch memastikan posisi fisik, dan server lokal ESP32 menampilkan status. Simulasi ini hanya ilustrasi; mode real-time membaca data MQTT perangkat terpilih.</p>
+        <p className="mt-4 text-center text-[11px] leading-5 text-slate-600">Topologi mengikuti firmware saat ini: ESP32 membaca DHT22, mengendalikan relay, mengirim telemetry lewat MQTT, dan menyediakan halaman HTTP lokal. Simulasi hanya ilustrasi; mode real-time membaca data perangkat melalui MQTT.</p>
       </div>
     </main>
   );
