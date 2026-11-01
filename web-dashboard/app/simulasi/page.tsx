@@ -432,42 +432,12 @@ export default function SimulationPage() {
       ];
   const activeSimulationDescription = scenario === "power_out" ? powerOutDescriptions[step] : activeSimulationStep.description;
   const cloudPathConditional = mode === "simulation" && scenario === "power_out" && simulatedDevicePowered;
+  const cloudServicesDown = mode === "simulation" && scenario === "web_down";
   const localRouterRouteActive = mode === "simulation" && (scenario === "web_down" || (scenario === "power_out" && backupPowerOn));
-  const routeNodes = mode === "realtime" || scenario === "normal"
-    ? [
-        { icon: Activity, title: "ESP32", zone: "Perangkat", detail: "Status perangkat dan relay" },
-        { icon: Wifi, title: "Router A", zone: "Jaringan garasi", detail: "Wi-Fi / LAN perangkat" },
-        { icon: Cloud, title: "Internet / WAN", zone: "Jalur internet", detail: "Menghubungkan jaringan ke layanan cloud" },
-        { icon: Activity, title: "EMQX Cloud", zone: "Broker MQTT", detail: "Meneruskan status dan perintah" },
-        { icon: Gauge, title: "Dashboard Vercel", zone: "Website", detail: "Memuat UI; MQTT berjalan dari browser" },
-        { icon: Home, title: "Pengguna · Router B", detail: "MQTT client di browser ? Router B" },
-      ]
-    : scenario === "web_down"
-      ? [
-          { icon: Activity, title: "ESP32 WebServer", detail: "Dashboard lokal · HTTP :80" },
-          { icon: Wifi, title: "Router A", zone: "Jaringan garasi", detail: "Wi-Fi / LAN garasi" },
-          { icon: ArrowRight, title: "Link intranet A ↔ B", detail: "Routing / VPN harus aktif" },
-          { icon: Wifi, title: "Router B", zone: "Jaringan pengguna", detail: "Intranet / VPN aktif" },
-          { icon: Home, title: "Browser pengguna", zone: "Dashboard lokal", detail: "Buka IP lokal ESP32" },
-        ]
-      : backupPowerOn
-        ? [
-            { icon: Power, title: "PLN padam", zone: "Catu daya", detail: "Sumber utama mati" },
-            { icon: Power, title: "UPS menyala", zone: "Daya cadangan", detail: "Menyuplai ESP32 + Router A" },
-            { icon: Activity, title: "ESP32 lokal", zone: "Perangkat lokal", detail: "Relay + HTTP :80 aktif" },
-            { icon: Wifi, title: "Router A \u2194 B", zone: "Jalur lokal", detail: "Intranet/VPN dan Router B perlu daya" },
-            { icon: Home, title: "Dashboard lokal", zone: "Pengguna", detail: "Buka alamat IP ESP32" },
-          ]
-        : [
-            { icon: Power, title: "PLN padam", zone: "Catu daya", detail: "Daya utama terputus" },
-            { icon: Power, title: "UPS mati", zone: "Daya cadangan", detail: "Tidak ada daya cadangan" },
-            { icon: Activity, title: "ESP32 + Router A", detail: "Mati · tidak ada data live" },
-            { icon: WifiOff, title: "Jalur monitoring", zone: "Koneksi", detail: "Tidak ada telemetry baru" },
-            { icon: Home, title: "Akses manual", zone: "Status", detail: "Dashboard tidak tersedia" },
-          ];
-  const routeProgress = mode === "realtime" ? (mqttConnected ? routeNodes.length - 1 : -1) : Math.round((step / Math.max(1, currentSteps.length - 1)) * (routeNodes.length - 1));
-  const flowAnimating = mode === "simulation" ? playing : mqttConnected;
-
+  const localRouteAnimating = mode === "simulation" && localRouterRouteActive && playing;
+  const cloudRouteAnimating = mode === "realtime" ? mqttConnected : mode === "simulation" && scenario === "normal" && playing;
+  const powerIsOff = mode === "simulation" && scenario === "power_out" && !backupPowerOn;
+  const connectionBadge = powerIsOff ? "Tidak ada daya" : cloudServicesDown ? "Cloud down \u00b7 gunakan jalur lokal" : cloudPathConditional ? "UPS aktif \u00b7 akses Router B bersyarat" : mode === "realtime" ? mqttConnected ? "MQTT terhubung" : "Menunggu MQTT" : playing ? "Animasi jalur aktif" : "Semua layanan normal";
 
 
   return (
@@ -565,30 +535,50 @@ export default function SimulationPage() {
 
             <div className="rounded-2xl border border-slate-300 bg-slate-50 p-3 text-slate-800 shadow-inner sm:p-5">
               <div className="mb-4 flex flex-wrap items-start justify-between gap-2">
-                <div><p className="text-[9px] font-bold uppercase tracking-[0.16em] text-sky-700">Diagram koneksi</p><h3 className="mt-1 text-sm font-extrabold">{mode === "simulation" ? `Alur: ${simulationScenarios[scenario].label}` : "Alur monitoring real-time"}</h3><p className="mt-1 text-[10px] text-slate-600 sm:text-xs">Setiap kartu adalah satu perangkat/jaringan. Ikuti panah untuk melihat jalur aktif.</p></div>
-                <span className={`rounded-full px-2.5 py-1 text-[9px] font-bold uppercase ${!simulatedDevicePowered && mode === "simulation" ? "bg-rose-100 text-rose-800" : localRouterRouteActive ? "bg-emerald-100 text-emerald-800" : cloudPathConditional ? "bg-amber-100 text-amber-800" : mqttConnected && mode === "realtime" ? "bg-emerald-100 text-emerald-800" : "bg-sky-100 text-sky-800"}`}>
-                  {!simulatedDevicePowered && mode === "simulation" ? "Tidak ada daya" : scenario === "web_down" && mode === "simulation" ? "Jalur lokal aktif" : cloudPathConditional ? "UPS aktif ? remote bersyarat" : mode === "realtime" ? mqttConnected ? "MQTT terhubung" : "Menunggu MQTT" : "Jalur cloud aktif"}
+                <div><p className="text-[9px] font-bold uppercase tracking-[0.16em] text-sky-700">Topologi sistem</p><h3 className="mt-1 text-sm font-extrabold sm:text-base">{mode === "simulation" ? `Alur: ${simulationScenarios[scenario].label}` : "Alur monitoring real-time"}</h3><p className="mt-1 text-[10px] text-slate-600 sm:text-xs">Zona garasi, cloud, dan pengguna terhubung mengikuti jalur yang dipilih.</p></div>
+                <span className={`rounded-full px-2.5 py-1 text-[9px] font-bold uppercase ${powerIsOff ? "bg-rose-100 text-rose-800" : cloudServicesDown ? "bg-amber-100 text-amber-800" : "bg-emerald-100 text-emerald-800"}`}>
+                  <span className={`mr-1.5 inline-block h-1.5 w-1.5 rounded-full ${powerIsOff ? "bg-rose-500" : cloudServicesDown ? "bg-amber-500" : "bg-emerald-500"} ${((cloudRouteAnimating || localRouteAnimating) && !powerIsOff) ? "animate-pulse" : ""}`} />{connectionBadge}
                 </span>
               </div>
 
-              <div className="flex flex-col gap-2 sm:flex-row sm:items-stretch sm:gap-1.5">
-                {routeNodes.map((node, index) => {
-                  const isOffline = mode === "simulation" && scenario === "power_out" && !backupPowerOn;
-                  const isReached = routeProgress >= index && !isOffline;
-                  const isCurrent = routeProgress === index && !isOffline;
-                  const Icon = node.icon;
-                  return <Fragment key={node.title}>
-                    <article className={`min-w-0 flex-1 rounded-xl border p-3 transition-all duration-500 ${isOffline ? "border-rose-200 bg-rose-50 text-rose-800" : isCurrent && flowAnimating ? "animate-pulse border-cyan-400 bg-cyan-50 text-cyan-900 shadow-md shadow-cyan-100" : isCurrent ? "border-cyan-400 bg-cyan-50 text-cyan-900 shadow-md shadow-cyan-100" : isReached ? "border-emerald-200 bg-emerald-50 text-emerald-900" : "border-slate-200 bg-white text-slate-700"}`}>
-                      <div className="flex items-start gap-2"><span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-white/90"><Icon size={16} /></span><div className="min-w-0"><p className="text-[9px] font-bold uppercase tracking-wide opacity-60">Segmen {index + 1} ? {node.zone}</p><strong className="mt-0.5 block text-xs leading-4">{node.title}</strong></div></div>
-                      <p className="mt-2 text-[10px] leading-4 opacity-75">{node.detail}</p>
-                    </article>
-                    {index < routeNodes.length - 1 && <span className={`relative -my-1.5 flex h-7 shrink-0 items-center justify-center sm:-mx-1.5 sm:my-0 sm:h-auto sm:w-7 ${isOffline ? "text-rose-400" : isReached ? "text-cyan-600" : "text-slate-300"}`} aria-hidden="true"><span className={`absolute h-7 w-px bg-current sm:h-px sm:w-7 ${isOffline ? "opacity-50" : "opacity-70"}`} /><ArrowRight className={`relative z-10 rotate-90 bg-slate-50 sm:rotate-0 ${isReached && flowAnimating && !isOffline ? "animate-pulse" : ""}`} size={18} />{isReached && flowAnimating && !isOffline && <span className="absolute left-1/2 top-1/2 h-1.5 w-1.5 -translate-x-1/2 -translate-y-1/2 animate-ping rounded-full bg-cyan-500" />}</span>}
-                  </Fragment>;
-                })}
+              <section className={`rounded-xl border-2 border-dashed p-3 sm:p-4 ${cloudServicesDown ? "border-rose-300 bg-rose-50" : "border-sky-300 bg-sky-50"}`}>
+                <div className="mb-3 flex flex-wrap items-start justify-between gap-2"><div><p className="text-[9px] font-bold uppercase tracking-[0.16em] text-sky-800">Zona internet &amp; cloud</p><h4 className="mt-1 text-xs font-extrabold sm:text-sm">Layanan jarak jauh</h4><p className="mt-1 text-[10px] text-slate-600 sm:text-xs">EMQX membawa MQTT; Vercel menyajikan website. Browser terhubung langsung ke broker.</p></div><span className={`rounded-full px-2.5 py-1 text-[9px] font-bold uppercase ${cloudServicesDown ? "bg-rose-100 text-rose-800" : "bg-emerald-100 text-emerald-800"}`}>{cloudServicesDown ? "Layanan cloud down" : "Layanan aktif"}</span></div>
+                <div className="grid gap-2 md:grid-cols-[minmax(0,1fr)_2.5rem_minmax(0,0.72fr)_2.5rem_minmax(0,1fr)] md:items-center">
+                  <article className={`rounded-xl border p-3 shadow-sm ${cloudServicesDown ? "border-rose-300 bg-rose-100 text-rose-800" : mqttConnected || cloudRouteAnimating ? "border-emerald-300 bg-emerald-50 text-emerald-800" : "border-slate-200 bg-white text-slate-700"}`}><div className="flex items-start gap-2.5"><span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-white"><Cloud size={18} /></span><div className="min-w-0"><div className="flex flex-wrap items-center justify-between gap-2"><strong className="text-xs sm:text-sm">EMQX Cloud</strong><span className="rounded-full bg-white/80 px-2 py-1 text-[8px] font-bold uppercase">{cloudServicesDown ? "Down" : mqttConnected ? "Tersambung" : "Broker MQTT"}</span></div><p className="mt-1 text-[10px] leading-4 opacity-75">TLS 8883 / WebSocket WSS 8084</p><p className="mt-1 break-all font-mono text-[9px] opacity-80">{selectedDevice?.topic_sub || "Topik perangkat"}</p></div></div></article>
+                  <div className={`flex items-center justify-center ${cloudRouteAnimating ? "text-cyan-600" : "text-slate-400"}`} aria-hidden="true"><span className="hidden h-px w-6 bg-current md:block" /><ArrowRight className={`rotate-90 md:rotate-0 ${cloudRouteAnimating ? "animate-pulse" : ""}`} size={18} />{cloudRouteAnimating && <span className="hidden h-1.5 w-1.5 animate-ping rounded-full bg-cyan-500 md:block" />}</div>
+                  <article className="rounded-xl border border-sky-200 bg-white p-3 text-center shadow-sm"><Cloud className="mx-auto text-sky-700" size={19} /><strong className="mt-1 block text-xs text-sky-900">Internet / WAN</strong><span className="text-[9px] text-slate-500">Jalur antarjaringan</span></article>
+                  <div className={`flex items-center justify-center ${cloudRouteAnimating ? "text-cyan-600" : "text-slate-400"}`} aria-hidden="true"><span className="hidden h-px w-6 bg-current md:block" /><ArrowRight className={`rotate-90 md:rotate-0 ${cloudRouteAnimating ? "animate-pulse" : ""}`} size={18} />{cloudRouteAnimating && <span className="hidden h-1.5 w-1.5 animate-ping rounded-full bg-cyan-500 md:block" />}</div>
+                  <article className={`rounded-xl border p-3 shadow-sm ${cloudServicesDown ? "border-rose-300 bg-rose-100 text-rose-800" : "border-emerald-300 bg-emerald-50 text-emerald-800"}`}><div className="flex items-start gap-2.5"><span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-white"><Gauge size={18} /></span><div><strong className="text-xs sm:text-sm">Dashboard Vercel</strong><p className="mt-1 text-[10px] leading-4 opacity-75">Next.js UI via HTTPS. MQTT.js browser membuka WSS langsung ke EMQX.</p></div></div></article>
+                </div>
+              </section>
+
+              <div className="my-3 grid gap-2 md:grid-cols-2">
+                <div className={`flex flex-wrap items-center justify-center gap-2 rounded-xl border px-3 py-2 text-center text-[9px] font-bold sm:text-[10px] ${powerIsOff ? "border-rose-200 bg-rose-50 text-rose-700" : localRouterRouteActive ? "border-emerald-200 bg-emerald-50 text-emerald-800" : "border-cyan-200 bg-cyan-50 text-cyan-800"}`}>
+                  <span>ESP32</span><ArrowRight className={localRouteAnimating || cloudRouteAnimating ? "animate-pulse" : ""} size={13} /><span>Router A</span><ArrowRight className={localRouteAnimating || cloudRouteAnimating ? "animate-pulse" : ""} size={13} /><span>{localRouterRouteActive ? "Link intranet / VPN" : "Internet \u2192 EMQX"}</span>
+                  {(localRouteAnimating || cloudRouteAnimating) && <span className="h-1.5 w-1.5 animate-ping rounded-full bg-cyan-500" />}
+                </div>
+                <div className={`flex flex-wrap items-center justify-center gap-2 rounded-xl border px-3 py-2 text-center text-[9px] font-bold sm:text-[10px] ${powerIsOff ? "border-slate-200 bg-slate-100 text-slate-500" : localRouterRouteActive ? "border-emerald-200 bg-emerald-50 text-emerald-800" : "border-violet-200 bg-violet-50 text-violet-800"}`}>
+                  <span>{localRouterRouteActive ? "Router A" : "EMQX"}</span><ArrowRight className={localRouteAnimating || cloudRouteAnimating ? "animate-pulse" : ""} size={13} /><span>{localRouterRouteActive ? "Router B" : "Browser / Router B"}</span><span className="text-slate-500">{localRouterRouteActive ? "\u00b7 Intranet / VPN" : "\u00b7 MQTT WSS \u2194 EMQX \u00b7 Vercel HTTPS UI"}</span>
+                  {(localRouteAnimating || cloudRouteAnimating) && <span className="h-1.5 w-1.5 animate-ping rounded-full bg-violet-500" />}
+                </div>
               </div>
 
-            </div>
+              <div className="grid gap-3 md:grid-cols-2">
+                <section className={`rounded-xl border-2 border-dashed p-3 sm:p-4 ${powerIsOff ? "border-rose-300 bg-rose-50" : "border-amber-300 bg-amber-50"}`}>
+                  <div className="mb-3"><p className="text-[9px] font-bold uppercase tracking-[0.16em] text-amber-800">Zona perangkat</p><h4 className="mt-1 text-xs font-extrabold sm:text-sm">Area garasi ? Router A</h4><p className="mt-1 text-[10px] text-slate-600 sm:text-xs">Wi-Fi perangkat dan akses lokal</p></div>
+                  <article className={`rounded-xl border p-3 shadow-sm ${powerIsOff ? "border-rose-300 bg-rose-100 text-rose-800" : "border-slate-200 bg-white text-slate-800"}`}><div className="flex items-start gap-2.5"><span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-slate-50"><Activity size={18} /></span><div><div className="flex flex-wrap items-center justify-between gap-2"><strong className="text-xs sm:text-sm">ESP32 + relay</strong><span className="rounded-full bg-slate-100 px-2 py-1 text-[8px] font-bold uppercase">{powerIsOff ? "Mati" : selectedDevice?.device_name || "Perangkat"}</span></div><p className="mt-1 text-[10px] leading-4 opacity-75">Menerima perintah relay dan menyediakan dashboard HTTP lokal :80.</p></div></div></article>
+                  <div className={`flex flex-col items-center py-1 text-[9px] font-semibold ${powerIsOff ? "text-rose-500" : localRouteAnimating || cloudRouteAnimating ? "text-cyan-700" : "text-slate-500"}`}><span className={`h-4 w-px bg-current ${localRouteAnimating || cloudRouteAnimating ? "animate-pulse" : ""}`} /><ArrowRight className={`rotate-90 ${localRouteAnimating || cloudRouteAnimating ? "animate-pulse" : ""}`} size={16} /><span>Wi-Fi / LAN garasi</span></div>
+                  <article className={`rounded-xl border p-3 shadow-sm ${powerIsOff ? "border-rose-300 bg-rose-100 text-rose-800" : "border-emerald-300 bg-emerald-50 text-emerald-800"}`}><div className="flex items-start gap-2.5"><span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-white"><Wifi size={18} /></span><div><div className="flex flex-wrap items-center justify-between gap-2"><strong className="text-xs sm:text-sm">Router A</strong><span className="rounded-full bg-white/80 px-2 py-1 text-[8px] font-bold uppercase">{powerIsOff ? "Tidak aktif" : cloudServicesDown ? "LAN lokal" : cloudRouteAnimating ? "Terhubung" : "LAN aktif"}</span></div><p className="mt-1 text-[10px] leading-4 opacity-75">Gateway lokal perangkat; jalur WAN dipakai saat tersedia.</p></div></div></article>
+                </section>
 
+                <section className="rounded-xl border-2 border-dashed border-teal-300 bg-teal-50 p-3 sm:p-4">
+                  <div className="mb-3"><p className="text-[9px] font-bold uppercase tracking-[0.16em] text-teal-800">Zona pengguna</p><h4 className="mt-1 text-xs font-extrabold sm:text-sm">Area pengguna ? Router B</h4><p className="mt-1 text-[10px] text-slate-600 sm:text-xs">HP / laptop mengakses dashboard</p></div>
+                  <article className="rounded-xl border border-emerald-300 bg-emerald-50 p-3 text-emerald-800 shadow-sm"><div className="flex items-start gap-2.5"><span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-white"><Wifi size={18} /></span><div><div className="flex flex-wrap items-center justify-between gap-2"><strong className="text-xs sm:text-sm">Router B / internet pengguna</strong><span className="rounded-full bg-white/80 px-2 py-1 text-[8px] font-bold uppercase">{scenario === "power_out" && mode === "simulation" ? "Butuh daya" : localRouterRouteActive ? "Intranet / VPN" : "Internet"}</span></div><p className="mt-1 text-[10px] leading-4 opacity-75">Pada jalur lokal, akses membutuhkan routing dua arah atau VPN Router A\u2013B.</p></div></div></article>
+                  <div className={`flex flex-col items-center py-1 text-[9px] font-semibold ${localRouteAnimating || cloudRouteAnimating ? "text-cyan-700" : "text-slate-500"}`}><span className={`h-4 w-px bg-current ${localRouteAnimating || cloudRouteAnimating ? "animate-pulse" : ""}`} /><ArrowRight className={`rotate-90 ${localRouteAnimating || cloudRouteAnimating ? "animate-pulse" : ""}`} size={16} /><span>{localRouterRouteActive ? "Intranet / VPN" : "Browser / HTTPS + MQTT WSS"}</span></div>
+                  <article className={`rounded-xl border p-3 shadow-sm ${powerIsOff ? "border-slate-200 bg-slate-100 text-slate-500" : "border-slate-200 bg-white text-slate-800"}`}><div className="flex items-start gap-2.5"><span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-slate-50"><Home size={18} /></span><div><div className="flex flex-wrap items-center justify-between gap-2"><strong className="text-xs sm:text-sm">{localRouterRouteActive ? "Dashboard lokal ESP32" : "Dashboard HP / laptop"}</strong><span className="rounded-full bg-slate-100 px-2 py-1 text-[8px] font-bold uppercase">{powerIsOff ? "Tidak tersedia" : localRouterRouteActive ? "HTTP lokal :80" : "Vercel + MQTT"}</span></div><p className="mt-1 text-[10px] leading-4 opacity-75">{localRouterRouteActive ? "Buka IP ESP32 dari Router A atau melalui link intranet/VPN." : "Vercel memuat UI; browser memakai MQTT WSS langsung ke EMQX."}</p></div></div></article>
+                </section>
+              </div>
+            </div>
           </div>
 
           <aside className="min-w-0 rounded-3xl border border-slate-800 bg-slate-900/60 p-4 sm:p-5">
