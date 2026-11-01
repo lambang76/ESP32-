@@ -453,15 +453,18 @@ export default function SimulationPage() {
       const routerB = routerBNodeRef.current?.getBoundingClientRect();
       if (bounds.width === 0 || bounds.height === 0 || !esp32 || !emqx || !vercel || !routerB) return;
 
-      const espStart = { x: esp32.right - bounds.left, y: esp32.top - bounds.top + esp32.height * 0.45 };
-      const mqttEnd = { x: emqx.left - bounds.left + emqx.width * 0.35, y: emqx.bottom - bounds.top };
-      const webStart = { x: vercel.left - bounds.left + vercel.width * 0.55, y: vercel.bottom - bounds.top };
-      const routerEnd = { x: routerB.left - bounds.left + routerB.width * 0.52, y: routerB.top - bounds.top };
+      const espStart = { x: esp32.right - bounds.left, y: esp32.top - bounds.top + esp32.height * 0.5 };
+      const mqttEnd = { x: emqx.left - bounds.left + emqx.width * 0.52, y: emqx.bottom - bounds.top };
+      const cloudLaneX = routerB.left - bounds.left - 14;
+      const mqttLaneY = mqttEnd.y + 18;
+      const webStart = { x: vercel.right - bounds.left, y: vercel.bottom - bounds.top };
+      const routerEnd = { x: routerB.left - bounds.left, y: routerB.top - bounds.top + routerB.height * 0.5 };
+      const webLaneX = routerEnd.x - 14;
 
       const nextSize = { width: bounds.width, height: bounds.height };
       const nextPaths = {
-        esp32ToEmqx: `M ${espStart.x} ${espStart.y} C ${espStart.x + 110} ${espStart.y - 75}, ${mqttEnd.x - 80} ${mqttEnd.y + 120}, ${mqttEnd.x} ${mqttEnd.y}`,
-        vercelToRouterB: `M ${webStart.x} ${webStart.y} C ${webStart.x + 40} ${webStart.y + 110}, ${routerEnd.x + 130} ${routerEnd.y - 100}, ${routerEnd.x} ${routerEnd.y}`,
+        esp32ToEmqx: `M ${espStart.x} ${espStart.y} H ${cloudLaneX} V ${mqttLaneY} H ${mqttEnd.x} V ${mqttEnd.y}`,
+        vercelToRouterB: `M ${webStart.x} ${webStart.y} H ${webLaneX} V ${routerEnd.y} H ${routerEnd.x}`,
       };
       setTopologySize((current) => current.width === nextSize.width && current.height === nextSize.height ? current : nextSize);
       setConnectorPaths((current) => current.esp32ToEmqx === nextPaths.esp32ToEmqx && current.vercelToRouterB === nextPaths.vercelToRouterB ? current : nextPaths);
@@ -639,12 +642,10 @@ export default function SimulationPage() {
               <svg aria-hidden="true" className="pointer-events-none absolute inset-0 z-10 hidden h-full w-full overflow-visible xl:block" viewBox={`0 0 ${topologySize.width} ${topologySize.height}`} preserveAspectRatio="none">
                 <defs><marker id="topology-connector-arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M 0 0 L 10 5 L 0 10 z" fill={scenario === "normal" ? "#0891b2" : scenario === "web_down" ? "#e11d48" : "#d97706"} /></marker></defs>
                 {connectorPaths.esp32ToEmqx && <>
-                  <path id="connector-esp32-emqx" d={connectorPaths.esp32ToEmqx} fill="none" stroke={scenario === "normal" ? "#0891b2" : scenario === "web_down" ? "#e11d48" : "#d97706"} strokeWidth="4" strokeDasharray="10 8" strokeLinecap="round" markerEnd="url(#topology-connector-arrow)" />
-                  <text fill="#0e7490" fontSize="12" fontWeight="700" paintOrder="stroke" stroke="#f8fafc" strokeWidth="5"><textPath href="#connector-esp32-emqx" startOffset="48%">MQTT TLS · 8883</textPath></text>
+                  <path id="connector-esp32-emqx" d={connectorPaths.esp32ToEmqx} fill="none" stroke={scenario === "normal" ? "#0891b2" : scenario === "web_down" ? "#e11d48" : "#d97706"} strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" markerEnd="url(#topology-connector-arrow)" />
                 </>}
                 {connectorPaths.vercelToRouterB && <>
-                  <path id="connector-vercel-router" d={connectorPaths.vercelToRouterB} fill="none" stroke={scenario === "normal" ? "#0d9488" : scenario === "web_down" ? "#e11d48" : "#d97706"} strokeWidth="4" strokeDasharray="10 8" strokeLinecap="round" markerEnd="url(#topology-connector-arrow)" />
-                  <text fill="#0f766e" fontSize="12" fontWeight="700" paintOrder="stroke" stroke="#f8fafc" strokeWidth="5"><textPath href="#connector-vercel-router" startOffset="48%">HTTPS / WSS</textPath></text>
+                  <path id="connector-vercel-router" d={connectorPaths.vercelToRouterB} fill="none" stroke={scenario === "normal" ? "#0d9488" : scenario === "web_down" ? "#e11d48" : "#d97706"} strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" markerEnd="url(#topology-connector-arrow)" />
                 </>}
                 {mode === "simulation" && playing && scenario === "normal" && connectorPaths.esp32ToEmqx && <circle r="6" fill="#06b6d4"><animateMotion dur="2.5s" repeatCount="indefinite" path={connectorPaths.esp32ToEmqx} /></circle>}
                 {mode === "simulation" && playing && scenario === "normal" && connectorPaths.vercelToRouterB && <circle r="6" fill="#14b8a6"><animateMotion dur="2.2s" repeatCount="indefinite" path={connectorPaths.vercelToRouterB} /></circle>}
