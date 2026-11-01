@@ -515,23 +515,27 @@ export default function SimulationPage() {
       const webStart = { x: vercel.left - bounds.left + vercel.width * 0.55, y: vercel.bottom - bounds.top };
       const routerEnd = { x: routerB.left - bounds.left + routerB.width * 0.52, y: routerB.top - bounds.top };
 
-      setTopologySize({ width: bounds.width, height: bounds.height });
-      setConnectorPaths({
+      const nextSize = { width: bounds.width, height: bounds.height };
+      const nextPaths = {
         esp32ToEmqx: `M ${espStart.x} ${espStart.y} C ${espStart.x + 110} ${espStart.y - 75}, ${mqttEnd.x - 80} ${mqttEnd.y + 120}, ${mqttEnd.x} ${mqttEnd.y}`,
         vercelToRouterB: `M ${webStart.x} ${webStart.y} C ${webStart.x + 40} ${webStart.y + 110}, ${routerEnd.x + 130} ${routerEnd.y - 100}, ${routerEnd.x} ${routerEnd.y}`,
-      });
+      };
+      setTopologySize((current) => current.width === nextSize.width && current.height === nextSize.height ? current : nextSize);
+      setConnectorPaths((current) => current.esp32ToEmqx === nextPaths.esp32ToEmqx && current.vercelToRouterB === nextPaths.vercelToRouterB ? current : nextPaths);
     };
 
-    const observer = new ResizeObserver(updateConnectorPaths);
-    observer.observe(canvas);
-    [esp32NodeRef.current, emqxNodeRef.current, vercelNodeRef.current, routerBNodeRef.current].forEach((node) => {
-      if (node) observer.observe(node);
-    });
+    const observer = typeof ResizeObserver === "undefined" ? null : new ResizeObserver(updateConnectorPaths);
+    if (observer) {
+      observer.observe(canvas);
+      [esp32NodeRef.current, emqxNodeRef.current, vercelNodeRef.current, routerBNodeRef.current].forEach((node) => {
+        if (node) observer.observe(node);
+      });
+    }
     window.addEventListener("resize", updateConnectorPaths);
     updateConnectorPaths();
 
     return () => {
-      observer.disconnect();
+      observer?.disconnect();
       window.removeEventListener("resize", updateConnectorPaths);
     };
   }, [mode, scenario]);
