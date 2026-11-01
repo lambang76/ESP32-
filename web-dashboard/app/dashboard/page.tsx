@@ -317,10 +317,6 @@ export default function DashboardPage() {
 
     setDoorState(null);
     setRfidValue(null);
-    setTemperature(null);
-    setHumidity(null);
-    setTemperatureHistory([]);
-    setHumidityHistory([]);
     setDeviceMetrics(EMPTY_METRICS);
     setLastCommand(null);
 
