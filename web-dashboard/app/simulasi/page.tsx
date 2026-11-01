@@ -469,14 +469,20 @@ export default function SimulationPage() {
       const broker = box(emqx);
       const website = box(vercel);
       const user = box(routerB);
-      const routeLaneX = (garage.right + user.left) / 2;
-      const cloudLaneY = internet.bottom + 18;
+      // Keep the two routes in separate lanes in the gutter between both zones.
+      const routeLaneCenter = (garage.right + user.left) / 2;
+      const garageLaneX = routeLaneCenter - 8;
+      const userLaneX = routeLaneCenter + 8;
+      // Reserve a clear connector bridge below the cloud zone so paths never
+      // run through the protocol legend or the lower zone cards.
+      const garageLaneY = internet.bottom + 28;
+      const userLaneY = internet.bottom + 46;
 
       const nextSize = { width: bounds.width, height: bounds.height };
       const nextPaths = {
-        garageToWan: `M ${garage.right} ${garage.cy} H ${routeLaneX} V ${cloudLaneY} H ${internet.cx} V ${internet.bottom}`,
+        garageToWan: `M ${garage.right} ${garage.cy} H ${garageLaneX} V ${garageLaneY} H ${internet.cx - 14} V ${internet.bottom}`,
         wanToEmqx: `M ${internet.left} ${internet.cy} H ${broker.right}`,
-        userToWan: `M ${user.left} ${user.cy} H ${routeLaneX} V ${cloudLaneY + 14} H ${internet.cx + 14} V ${internet.bottom}`,
+        userToWan: `M ${user.left} ${user.cy} H ${userLaneX} V ${userLaneY} H ${internet.cx + 14} V ${internet.bottom}`,
         wanToVercel: `M ${internet.right} ${internet.cy} H ${website.left}`,
       };
       setTopologySize((current) => current.width === nextSize.width && current.height === nextSize.height ? current : nextSize);
@@ -674,10 +680,7 @@ export default function SimulationPage() {
                 </div>
               </section>
 
-              <div className="my-2 flex flex-wrap items-center justify-center gap-x-5 gap-y-1 text-[9px] font-semibold text-slate-600 sm:my-3 sm:text-[10px]">
-                <span className="inline-flex items-center gap-1.5"><i className="h-1 w-5 rounded bg-cyan-600" /> MQTT TLS 8883 &middot; ESP32 &harr; EMQX</span>
-                <span className="inline-flex items-center gap-1.5"><i className="h-1 w-5 rounded bg-teal-600" /> HTTPS ke Vercel &middot; MQTT WSS 8084 ke EMQX</span>
-              </div>
+              <div aria-hidden="true" className="h-12" />
               <div className="grid gap-3 md:grid-cols-2">
                 <section className={`rounded-xl border-2 border-dashed p-3 sm:p-4 ${!simulatedDevicePowered && mode === "simulation" ? "border-rose-300 bg-rose-50" : "border-amber-300 bg-amber-50"}`}>
                   <div className="mb-3"><p className="text-[9px] font-bold uppercase tracking-[0.16em]">Zona perangkat</p><h3 className="text-xs font-extrabold sm:text-sm">Area garasi · Router A</h3><p className="mt-1 text-[10px] text-slate-600 sm:text-xs">Wi-Fi perangkat dan akses lokal</p></div>
@@ -702,6 +705,11 @@ export default function SimulationPage() {
                     <TopologyDevice icon={Home} title="Dashboard HP / laptop" detail={mode === "simulation" && scenario !== "normal" && simulatedDevicePowered ? "Akses halaman ESP32 dari Wi-Fi lokal; dari luar perlu VPN MikroTik." : mode === "simulation" && !simulatedDevicePowered ? "Offline; operasikan gerbang secara manual." : "Pantau status reed switch dan kirim perintah buka/tutup."} state={mode === "simulation" ? !simulatedDevicePowered ? "down" : scenario === "normal" ? "active" : "conditional" : mqttConnected ? "active" : "standby"} stateText={mode === "simulation" ? !simulatedDevicePowered ? "Offline" : scenario === "normal" ? "Remote" : "Pakai lokal" : mqttConnected ? "Live" : "Menunggu"} />
                   </div>
                 </section>
+              </div>
+
+              <div className="mt-3 flex flex-wrap items-center justify-center gap-x-5 gap-y-1 rounded-lg border border-slate-200 bg-white/90 px-3 py-2 text-[9px] font-semibold text-slate-600 sm:text-[10px]">
+                <span className="inline-flex items-center gap-1.5"><i className="h-1 w-5 rounded bg-cyan-600" /> MQTT TLS 8883 &middot; ESP32 &harr; EMQX</span>
+                <span className="inline-flex items-center gap-1.5"><i className="h-1 w-5 rounded bg-teal-600" /> HTTPS ke Vercel &middot; MQTT WSS 8084 ke EMQX</span>
               </div>
 
               <section className="mt-3 rounded-xl border border-slate-200 bg-white p-3 sm:p-4" aria-label="Jalur komunikasi real-time">
