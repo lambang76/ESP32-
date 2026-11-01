@@ -18,7 +18,6 @@ import {
   Power,
   Signal,
   Terminal,
-  Thermometer,
   Wifi,
   WifiOff,
 } from "lucide-react";
@@ -86,19 +85,6 @@ function formatUptime(value: number | null) {
   return days > 0 ? `${days}d ${hours}h` : hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
 }
 
-function trendPoints(values: number[]) {
-  if (values.length < 2) return "0,26 100,26";
-  const min = Math.min(...values);
-  const range = Math.max(...values) - min || 1;
-  return values
-    .map((value, index) => {
-      const x = (index / (values.length - 1)) * 100;
-      const y = 30 - ((value - min) / range) * 24;
-      return `${x},${y}`;
-    })
-    .join(" ");
-}
-
 export default function DashboardPage() {
   const router = useRouter();
   const clientRef = useRef<MqttClient | null>(null);
@@ -116,10 +102,6 @@ export default function DashboardPage() {
   const [deviceError, setDeviceError] = useState<string | null>(null);
   const [doorState, setDoorState] = useState<DoorState>(null);
   const [rfidValue, setRfidValue] = useState<string | null>(null);
-  const [temperature, setTemperature] = useState<number | null>(null);
-  const [humidity, setHumidity] = useState<number | null>(null);
-  const [temperatureHistory, setTemperatureHistory] = useState<number[]>([]);
-  const [humidityHistory, setHumidityHistory] = useState<number[]>([]);
   const [deviceMetrics, setDeviceMetrics] = useState<DeviceMetrics>(EMPTY_METRICS);
   const [lastCommand, setLastCommand] = useState<string | null>(null);
   const [terminalEntries, setTerminalEntries] = useState<TerminalEntry[]>([]);
@@ -269,24 +251,6 @@ export default function DashboardPage() {
         }
       } catch {
         // Plain-text and numeric payloads are handled by their topic suffixes.
-      }
-
-      const tempValue = values?.temperature ?? values?.temp ?? values?.suhu;
-      const humidityValue = values?.humidity ?? values?.hum ?? values?.kelembapan;
-      const numericTemperature = Number(tempValue ?? payload);
-      const numericHumidity = Number(humidityValue ?? payload);
-
-      if (tempValue !== undefined || ["suhu", "temperature", "temp"].includes(suffix)) {
-        if (Number.isFinite(numericTemperature)) {
-          setTemperature(numericTemperature);
-          setTemperatureHistory((current) => [...current, numericTemperature].slice(-24));
-        }
-      }
-      if (humidityValue !== undefined || ["kelembapan", "humidity", "hum"].includes(suffix)) {
-        if (Number.isFinite(numericHumidity)) {
-          setHumidity(numericHumidity);
-          setHumidityHistory((current) => [...current, numericHumidity].slice(-24));
-        }
       }
 
       if (values) {
@@ -516,7 +480,7 @@ export default function DashboardPage() {
               Garasi & pagar pintar
             </h2>
             <p className="mt-2 max-w-xl text-sm leading-6 text-slate-400">
-              Pantau status pintu, akses RFID, dan kondisi lingkungan dari satu panel.
+              Pantau status pintu garasi dan akses RFID dari satu panel.
             </p>
           </div>
 
@@ -549,7 +513,7 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3 xl:gap-5" aria-label="Garage status and metrics">
+        <section className="grid gap-4 md:grid-cols-2 xl:gap-5" aria-label="Garage status and metrics">
           <article
             className={`relative min-h-56 overflow-hidden rounded-3xl border p-5 shadow-2xl backdrop-blur-xl sm:min-h-64 sm:p-7 ${
               doorState === "open"
@@ -595,46 +559,6 @@ export default function DashboardPage() {
             </div>
             <div className="mt-8 inline-flex items-center gap-2 rounded-full border border-violet-300/15 bg-violet-300/5 px-3 py-1.5 text-xs text-violet-200/80">
               <span className="h-1.5 w-1.5 rounded-full bg-violet-300" /> RFID access monitor
-            </div>
-          </article>
-
-          <article className="relative min-h-56 overflow-hidden rounded-3xl border border-cyan-300/15 bg-gradient-to-br from-cyan-500/10 via-slate-900/85 to-slate-900 p-5 shadow-2xl shadow-cyan-950/20 backdrop-blur-xl md:col-span-2 xl:col-span-1 sm:min-h-64 sm:p-7">
-            <div className="flex items-start justify-between">
-              <div>
-                <p className="text-sm font-medium text-slate-400">LINGKUNGAN GARASI</p>
-                <div className="mt-5 flex items-baseline gap-2">
-                  <h3 className="text-4xl font-semibold tracking-tight sm:text-5xl">
-                    {temperature === null ? "--" : temperature.toFixed(1)}
-                  </h3>
-                  <span className="text-xl text-slate-400">°C</span>
-                </div>
-                <p className="mt-2 text-sm text-slate-400">Suhu dalam garasi</p>
-              </div>
-              <div className="rounded-2xl border border-cyan-300/20 bg-cyan-300/10 p-4 text-cyan-200">
-                <Thermometer size={28} />
-              </div>
-            </div>
-            <div className="mt-8 flex items-center justify-between border-t border-white/5 pt-4 text-sm">
-              <span className="text-slate-400">Kelembapan</span>
-              <span className="font-semibold text-cyan-100">{humidity === null ? "--" : `${humidity.toFixed(1)}%`}</span>
-            </div>
-            <div className="mt-4 grid grid-cols-2 gap-3">
-              <div className="rounded-xl border border-white/[0.06] bg-black/10 p-3">
-                <div className="flex items-center justify-between text-[11px] text-slate-500">
-                  <span>Tren suhu</span><span>{temperatureHistory.length} sampel</span>
-                </div>
-                <svg viewBox="0 0 100 34" preserveAspectRatio="none" className="mt-2 h-9 w-full" role="img" aria-label="Tren suhu terakhir">
-                  <polyline points={trendPoints(temperatureHistory)} fill="none" stroke="#67e8f9" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
-                </svg>
-              </div>
-              <div className="rounded-xl border border-white/[0.06] bg-black/10 p-3">
-                <div className="flex items-center justify-between text-[11px] text-slate-500">
-                  <span>Tren kelembapan</span><span>{humidityHistory.length} sampel</span>
-                </div>
-                <svg viewBox="0 0 100 34" preserveAspectRatio="none" className="mt-2 h-9 w-full" role="img" aria-label="Tren kelembapan terakhir">
-                  <polyline points={trendPoints(humidityHistory)} fill="none" stroke="#c4b5fd" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
-                </svg>
-              </div>
             </div>
           </article>
         </section>
