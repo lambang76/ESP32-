@@ -151,6 +151,8 @@ export default function SimulationPage() {
   const subscribedTopicRef = useRef<string | null>(null);
   const fullscreenRef = useRef<HTMLDivElement | null>(null);
   const topologyCanvasRef = useRef<HTMLDivElement | null>(null);
+  const routerANodeRef = useRef<HTMLDivElement | null>(null);
+  const wanNodeRef = useRef<HTMLDivElement | null>(null);
   const esp32NodeRef = useRef<HTMLDivElement | null>(null);
   const emqxNodeRef = useRef<HTMLDivElement | null>(null);
   const vercelNodeRef = useRef<HTMLDivElement | null>(null);
@@ -179,7 +181,7 @@ export default function SimulationPage() {
   const [fullscreen, setFullscreen] = useState(false);
   const [commandStatus, setCommandStatus] = useState("");
   const [topologySize, setTopologySize] = useState({ width: 0, height: 0 });
-  const [connectorPaths, setConnectorPaths] = useState({ esp32ToEmqx: "", vercelToRouterB: "" });
+  const [connectorPaths, setConnectorPaths] = useState({ garageToWan: "", wanToEmqx: "", userToWan: "", wanToVercel: "" });
   const currentSteps = simulationScenarios[scenario].steps;
 
   const appendLog = useCallback((topic: string, payload: string) => {
@@ -447,33 +449,44 @@ export default function SimulationPage() {
 
     const updateConnectorPaths = () => {
       const bounds = canvas.getBoundingClientRect();
-      const esp32 = esp32NodeRef.current?.getBoundingClientRect();
+      const routerA = routerANodeRef.current?.getBoundingClientRect();
+      const wan = wanNodeRef.current?.getBoundingClientRect();
       const emqx = emqxNodeRef.current?.getBoundingClientRect();
       const vercel = vercelNodeRef.current?.getBoundingClientRect();
       const routerB = routerBNodeRef.current?.getBoundingClientRect();
-      if (bounds.width === 0 || bounds.height === 0 || !esp32 || !emqx || !vercel || !routerB) return;
+      if (bounds.width === 0 || bounds.height === 0 || !routerA || !wan || !emqx || !vercel || !routerB) return;
 
-      const espStart = { x: esp32.right - bounds.left, y: esp32.top - bounds.top + esp32.height * 0.5 };
-      const mqttEnd = { x: emqx.left - bounds.left + emqx.width * 0.52, y: emqx.bottom - bounds.top };
-      const cloudLaneX = routerB.left - bounds.left - 14;
-      const mqttLaneY = mqttEnd.y + 18;
-      const webStart = { x: vercel.right - bounds.left, y: vercel.bottom - bounds.top };
-      const routerEnd = { x: routerB.left - bounds.left, y: routerB.top - bounds.top + routerB.height * 0.5 };
-      const webLaneX = routerEnd.x - 14;
+      const box = (rect: DOMRect) => ({
+        left: rect.left - bounds.left,
+        right: rect.right - bounds.left,
+        top: rect.top - bounds.top,
+        bottom: rect.bottom - bounds.top,
+        cx: rect.left - bounds.left + rect.width / 2,
+        cy: rect.top - bounds.top + rect.height / 2,
+      });
+      const garage = box(routerA);
+      const internet = box(wan);
+      const broker = box(emqx);
+      const website = box(vercel);
+      const user = box(routerB);
+      const routeLaneX = (garage.right + user.left) / 2;
+      const cloudLaneY = internet.bottom + 18;
 
       const nextSize = { width: bounds.width, height: bounds.height };
       const nextPaths = {
-        esp32ToEmqx: `M ${espStart.x} ${espStart.y} H ${cloudLaneX} V ${mqttLaneY} H ${mqttEnd.x} V ${mqttEnd.y}`,
-        vercelToRouterB: `M ${webStart.x} ${webStart.y} H ${webLaneX} V ${routerEnd.y} H ${routerEnd.x}`,
+        garageToWan: `M ${garage.right} ${garage.cy} H ${routeLaneX} V ${cloudLaneY} H ${internet.cx} V ${internet.bottom}`,
+        wanToEmqx: `M ${internet.left} ${internet.cy} H ${broker.right}`,
+        userToWan: `M ${user.left} ${user.cy} H ${routeLaneX} V ${cloudLaneY + 14} H ${internet.cx + 14} V ${internet.bottom}`,
+        wanToVercel: `M ${internet.right} ${internet.cy} H ${website.left}`,
       };
       setTopologySize((current) => current.width === nextSize.width && current.height === nextSize.height ? current : nextSize);
-      setConnectorPaths((current) => current.esp32ToEmqx === nextPaths.esp32ToEmqx && current.vercelToRouterB === nextPaths.vercelToRouterB ? current : nextPaths);
+      setConnectorPaths((current) => current.garageToWan === nextPaths.garageToWan && current.wanToEmqx === nextPaths.wanToEmqx && current.userToWan === nextPaths.userToWan && current.wanToVercel === nextPaths.wanToVercel ? current : nextPaths);
     };
 
     const observer = typeof ResizeObserver === "undefined" ? null : new ResizeObserver(updateConnectorPaths);
     if (observer) {
       observer.observe(canvas);
-      [esp32NodeRef.current, emqxNodeRef.current, vercelNodeRef.current, routerBNodeRef.current].forEach((node) => {
+      [routerANodeRef.current, wanNodeRef.current, emqxNodeRef.current, vercelNodeRef.current, routerBNodeRef.current].forEach((node) => {
         if (node) observer.observe(node);
       });
     }
@@ -536,6 +549,7 @@ export default function SimulationPage() {
   );
   const cloudPathDown = mode === "simulation" && (scenario === "web_down" || (scenario === "power_out" && !simulatedDevicePowered));
   const cloudPathConditional = mode === "simulation" && scenario === "power_out" && simulatedDevicePowered;
+  const topologyLineColor = scenario === "normal" ? "#0891b2" : scenario === "power_out" && backupPowerOn ? "#d97706" : "#e11b48";
   const routeNodes = [
     { icon: KeyRound, title: "RC522 membaca UID", detail: "Kartu/tag RFID 13,56 MHz" },
     { icon: Activity, title: "ESP32 validasi", detail: "Cek UID pada allow-list lokal" },
@@ -640,31 +654,33 @@ export default function SimulationPage() {
 
             <div ref={topologyCanvasRef} className="relative rounded-2xl border border-slate-300 bg-slate-50 p-3 text-slate-800 shadow-inner sm:p-5">
               <svg aria-hidden="true" className="pointer-events-none absolute inset-0 z-10 hidden h-full w-full overflow-visible xl:block" viewBox={`0 0 ${topologySize.width} ${topologySize.height}`} preserveAspectRatio="none">
-                <defs><marker id="topology-connector-arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M 0 0 L 10 5 L 0 10 z" fill={scenario === "normal" ? "#0891b2" : scenario === "web_down" ? "#e11d48" : "#d97706"} /></marker></defs>
-                {connectorPaths.esp32ToEmqx && <>
-                  <path id="connector-esp32-emqx" d={connectorPaths.esp32ToEmqx} fill="none" stroke={scenario === "normal" ? "#0891b2" : scenario === "web_down" ? "#e11d48" : "#d97706"} strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" markerEnd="url(#topology-connector-arrow)" />
-                </>}
-                {connectorPaths.vercelToRouterB && <>
-                  <path id="connector-vercel-router" d={connectorPaths.vercelToRouterB} fill="none" stroke={scenario === "normal" ? "#0d9488" : scenario === "web_down" ? "#e11d48" : "#d97706"} strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" markerEnd="url(#topology-connector-arrow)" />
-                </>}
-                {mode === "simulation" && playing && scenario === "normal" && connectorPaths.esp32ToEmqx && <circle r="6" fill="#06b6d4"><animateMotion dur="2.5s" repeatCount="indefinite" path={connectorPaths.esp32ToEmqx} /></circle>}
-                {mode === "simulation" && playing && scenario === "normal" && connectorPaths.vercelToRouterB && <circle r="6" fill="#14b8a6"><animateMotion dur="2.2s" repeatCount="indefinite" path={connectorPaths.vercelToRouterB} /></circle>}
+                <defs>
+                  <marker id="topology-mqtt-arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M 0 0 L 10 5 L 0 10 z" fill={scenario === "normal" ? "#0891b2" : topologyLineColor} /></marker>
+                  <marker id="topology-web-arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M 0 0 L 10 5 L 0 10 z" fill={scenario === "normal" ? "#0d9488" : topologyLineColor} /></marker>
+                  <filter id="topology-packet-glow" x="-100%" y="-100%" width="300%" height="300%"><feGaussianBlur stdDeviation="3" result="blur" /><feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge></filter>
+                </defs>
+                {Object.entries(connectorPaths).map(([key, path]) => path && <path key={key} d={path} fill="none" stroke={scenario === "normal" ? key === "garageToWan" || key === "wanToEmqx" ? "#0891b2" : "#0d9488" : topologyLineColor} strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" markerEnd={key === "garageToWan" || key === "wanToEmqx" ? "url(#topology-mqtt-arrow)" : "url(#topology-web-arrow)"} />)}
+                {mode === "simulation" && playing && scenario === "normal" && Object.entries(connectorPaths).map(([key, path], index) => path && <circle key={`packet-${key}`} r="6" fill={index < 2 ? "#06b6d4" : "#14b8a6"} filter="url(#topology-packet-glow)"><animateMotion dur={`${2.2 + index * 0.35}s`} repeatCount="indefinite" path={path} /></circle>)}
               </svg>
               <section className={`rounded-xl border-2 border-dashed p-3 sm:p-4 ${scenario === "web_down" || (scenario === "power_out" && !backupPowerOn) ? "border-rose-300 bg-rose-50" : scenario === "power_out" && backupPowerOn ? "border-amber-300 bg-amber-50" : "border-sky-300 bg-sky-50"}`}>
-                <div className="mb-3 flex flex-wrap items-start justify-between gap-2">
-                  <div><h3 className="text-xs font-extrabold sm:text-sm">Internet / layanan cloud</h3><p className="mt-1 text-[10px] text-slate-600 sm:text-xs">EMQX adalah broker MQTT; Vercel meng-host website. Keduanya layanan berbeda.</p></div>
+                <div className="mb-3 flex flex-wrap items-start justify-between gap-2"><div><p className="text-[9px] font-bold uppercase tracking-[0.16em] text-sky-800">Zona internet &amp; cloud</p>
+                  <div><h3 className="text-xs font-extrabold sm:text-sm">Layanan jarak jauh</h3><p className="mt-1 text-[10px] text-slate-600 sm:text-xs">EMQX adalah broker MQTT; Vercel meng-host website. Keduanya layanan berbeda.</p></div></div>
                   <span className={`rounded-full px-2.5 py-1 text-[9px] font-bold uppercase ${cloudPathDown ? "bg-rose-100 text-rose-800" : cloudPathConditional ? "bg-amber-100 text-amber-800" : "bg-emerald-100 text-emerald-800"}`}>{scenario === "web_down" ? "Cloud down" : scenario === "power_out" && !simulatedDevicePowered ? "Tidak ada telemetry" : scenario === "power_out" ? "Tergantung UPS + WAN" : "Jalur normal"}</span>
                 </div>
-                <div className="grid gap-2 sm:grid-cols-2">
+                <div className="grid gap-2 xl:grid-cols-[minmax(0,1fr)_190px_minmax(0,1fr)]">
                   <div ref={emqxNodeRef} className="relative z-20"><TopologyDevice icon={Cloud} title="EMQX Cloud" detail="Broker MQTT · TLS 8883 / WSS 8084 · topik esp32/garasi" state={mode === "realtime" ? mqttConnected ? "active" : "standby" : scenario === "normal" ? "active" : scenario === "web_down" || !simulatedDevicePowered ? "down" : "conditional"} stateText={mode === "realtime" ? mqttConnected ? "Terhubung" : "Menunggu" : scenario === "normal" ? "Aktif" : scenario === "web_down" || !simulatedDevicePowered ? "Down" : "Kondisional"} /></div>
+                  <div ref={wanNodeRef} className={`relative z-20 flex min-h-[74px] flex-col items-center justify-center rounded-xl border px-3 py-2 text-center shadow-sm ${cloudPathDown ? "border-rose-200 bg-rose-50 text-rose-800" : cloudPathConditional ? "border-amber-200 bg-amber-50 text-amber-800" : "border-sky-200 bg-white text-sky-900"}`}><Cloud size={19} className={mode === "simulation" && playing && scenario === "normal" ? "animate-pulse" : ""} /><strong className="mt-1 text-xs">Internet / WAN</strong><span className="text-[9px]">Jalur antarjaringan</span></div>
                   <div ref={vercelNodeRef} className="relative z-20"><TopologyDevice icon={Gauge} title="Dashboard Vercel" detail="Next.js · dibuka pengguna melalui browser" state={mode === "realtime" ? "active" : scenario === "normal" ? "active" : scenario === "power_out" && simulatedDevicePowered ? "conditional" : "down"} stateText={mode === "realtime" ? "Website" : scenario === "normal" ? "Aktif" : scenario === "power_out" && simulatedDevicePowered ? "Kondisional" : "Down"} /></div>
                 </div>
               </section>
 
-              <div className="my-2 text-center text-[10px] font-semibold text-slate-500 sm:my-3">Akses internet menghubungkan jaringan garasi dengan broker dan dashboard</div>
+              <div className="my-2 flex flex-wrap items-center justify-center gap-x-5 gap-y-1 text-[9px] font-semibold text-slate-600 sm:my-3 sm:text-[10px]">
+                <span className="inline-flex items-center gap-1.5"><i className="h-1 w-5 rounded bg-cyan-600" /> MQTT TLS 8883 &middot; ESP32 &harr; EMQX</span>
+                <span className="inline-flex items-center gap-1.5"><i className="h-1 w-5 rounded bg-teal-600" /> HTTPS ke Vercel &middot; MQTT WSS 8084 ke EMQX</span>
+              </div>
               <div className="grid gap-3 md:grid-cols-2">
                 <section className={`rounded-xl border-2 border-dashed p-3 sm:p-4 ${!simulatedDevicePowered && mode === "simulation" ? "border-rose-300 bg-rose-50" : "border-amber-300 bg-amber-50"}`}>
-                  <div className="mb-3"><h3 className="text-xs font-extrabold sm:text-sm">Area garasi · Router A</h3><p className="mt-1 text-[10px] text-slate-600 sm:text-xs">Wi-Fi perangkat dan akses lokal</p></div>
+                  <div className="mb-3"><p className="text-[9px] font-bold uppercase tracking-[0.16em]">Zona perangkat</p><h3 className="text-xs font-extrabold sm:text-sm">Area garasi · Router A</h3><p className="mt-1 text-[10px] text-slate-600 sm:text-xs">Wi-Fi perangkat dan akses lokal</p></div>
                     <div className="grid gap-2">
                     <div className="grid gap-1">
                       <TopologyDevice icon={KeyRound} title="RFID RC522" detail="Membaca UID kartu/tag 13,56 MHz melalui SPI." state={mode === "simulation" ? !simulatedDevicePowered ? "down" : routeProgress === 0 ? "active" : "standby" : "standby"} stateText={mode === "simulation" ? !simulatedDevicePowered ? "Mati" : routeProgress === 0 ? "Tap kartu" : "Pembaca" : "SPI"} />
@@ -674,12 +690,12 @@ export default function SimulationPage() {
                       <TopologyDevice icon={RotateCw} title="Servo gerbang" detail="Menggerakkan model gerbang ke posisi buka/tutup; perlu catu daya 5 V terpisah." state={mode === "simulation" ? !simulatedDevicePowered ? "down" : routeProgress === 2 ? "active" : "standby" : "standby"} stateText={mode === "simulation" ? !simulatedDevicePowered ? "Mati" : routeProgress === 2 ? "Bergerak" : "Aktuator" : "PWM"} />
                     </div>
                     <div className={`flex flex-wrap items-center justify-center gap-2 rounded-lg border border-dashed px-2 py-2 text-center text-[10px] ${mode === "simulation" && routeProgress === 3 ? "animate-pulse border-cyan-400 bg-cyan-50 text-cyan-900" : "border-slate-300 bg-white/70 text-slate-600"}`}><DoorClosed size={14} /><strong>Reed switch di kusen</strong><span>· GPIO 4 · INPUT_PULLUP</span><span>→ memberi status pintu sebenarnya kembali ke ESP32</span></div>
-                    <div className="flex flex-wrap items-center justify-center gap-2 text-center text-[9px] font-semibold text-slate-500 sm:text-[10px]"><span>ESP32 / WebServer</span><span className="text-cyan-700">⇄ Wi-Fi / LAN ⇄</span><span>Router A / MikroTik</span><span className="text-slate-400">→ internet / VPN bila diaktifkan</span></div>
+                    <div className="mt-2 grid justify-items-center gap-1"><span className={`text-base font-black text-cyan-700 ${mode === "simulation" && playing && scenario === "normal" ? "animate-bounce" : ""}`} aria-hidden="true">&darr;</span><div ref={routerANodeRef} className="relative z-20 w-full"><TopologyDevice icon={Wifi} title="Router A" detail="Wi-Fi / LAN garasi &middot; gateway ke internet" state={mode === "simulation" && !simulatedDevicePowered ? "down" : mode === "simulation" && scenario === "power_out" ? "conditional" : "active"} stateText={mode === "simulation" && !simulatedDevicePowered ? "Mati" : mode === "simulation" && scenario === "power_out" ? "UPS" : "Gateway"} /></div><span className="text-[9px] font-semibold text-slate-500">ESP32 &harr; Wi-Fi / LAN &harr; WAN</span></div>
                   </div>
                 </section>
 
                 <section className="rounded-xl border-2 border-dashed border-teal-300 bg-teal-50 p-3 sm:p-4">
-                  <div className="mb-3"><h3 className="text-xs font-extrabold sm:text-sm">Area pengguna · Router B</h3><p className="mt-1 text-[10px] text-slate-600 sm:text-xs">HP / laptop mengakses dashboard</p></div>
+                  <div className="mb-3"><p className="text-[9px] font-bold uppercase tracking-[0.16em]">Zona pengguna</p><h3 className="text-xs font-extrabold sm:text-sm">Area pengguna · Router B</h3><p className="mt-1 text-[10px] text-slate-600 sm:text-xs">HP / laptop mengakses dashboard</p></div>
                   <div className="grid gap-2">
                     <div ref={routerBNodeRef} className="relative z-20"><TopologyDevice icon={Wifi} title="Router B / Internet pengguna" detail="Jaringan pengguna berbeda; jalur cloud memakai internet. Akses IP lokal butuh WireGuard jika dikonfigurasi." state={scenario === "normal" || mode === "realtime" ? "active" : scenario === "power_out" && simulatedDevicePowered ? "conditional" : "standby"} stateText={scenario === "normal" || mode === "realtime" ? "Internet" : scenario === "power_out" && simulatedDevicePowered ? "Kondisional" : "Terpisah"} /></div>
                     <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-1 text-center text-[9px] font-semibold text-slate-500 sm:text-[10px]"><span>Browser</span><span className="text-slate-400">&rarr;</span><span>Vercel / MQTT WSS</span></div>
