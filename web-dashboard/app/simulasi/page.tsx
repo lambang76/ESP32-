@@ -154,6 +154,42 @@ function DiagramNode({
   );
 }
 
+function TopologyDevice({
+  icon: Icon,
+  title,
+  detail,
+  state,
+  stateText,
+}: {
+  icon: typeof DoorClosed;
+  title: string;
+  detail: string;
+  state: "active" | "standby" | "down" | "conditional";
+  stateText: string;
+}) {
+  const stateStyles = {
+    active: "border-emerald-300 bg-emerald-50 text-emerald-800",
+    standby: "border-slate-200 bg-white text-slate-700",
+    down: "border-rose-300 bg-rose-50 text-rose-800",
+    conditional: "border-amber-300 bg-amber-50 text-amber-800",
+  };
+
+  return (
+    <article className={`min-w-0 rounded-xl border p-3 shadow-sm sm:p-4 ${stateStyles[state]}`}>
+      <div className="flex items-start gap-2.5">
+        <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-white/80"><Icon size={18} /></span>
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <h3 className="text-xs font-bold sm:text-sm">{title}</h3>
+            <span className="rounded-full bg-white/80 px-2 py-1 text-[9px] font-bold uppercase tracking-wide">{stateText}</span>
+          </div>
+          <p className="mt-1 text-[11px] leading-4 opacity-80">{detail}</p>
+        </div>
+      </div>
+    </article>
+  );
+}
+
 export default function SimulationPage() {
   const router = useRouter();
   const clientRef = useRef<MqttClient | null>(null);
@@ -568,7 +604,47 @@ export default function SimulationPage() {
               <button type="button" onClick={() => void toggleFullscreen()} className="inline-flex items-center gap-2 rounded-lg border border-slate-700 px-3 py-2 text-xs font-medium text-slate-300 hover:border-cyan-300/40 hover:text-white"><Maximize2 size={14} />{fullscreen ? "Keluar layar penuh" : "Layar penuh (F)"}</button>
             </div>
 
-            <div className="grid items-stretch gap-2 xl:grid-cols-[minmax(0,1fr)_28px_minmax(0,1fr)_28px_minmax(0,1fr)_28px_minmax(0,1fr)]">
+            <div className="rounded-2xl border border-slate-300 bg-slate-50 p-3 text-slate-800 shadow-inner sm:p-5">
+              <section className={`rounded-xl border-2 border-dashed p-3 sm:p-4 ${scenario === "web_down" || (scenario === "power_out" && !backupPowerOn) ? "border-rose-300 bg-rose-50" : scenario === "power_out" && backupPowerOn ? "border-amber-300 bg-amber-50" : "border-sky-300 bg-sky-50"}`}>
+                <div className="mb-3 flex flex-wrap items-start justify-between gap-2">
+                  <div><h3 className="text-xs font-extrabold sm:text-sm">Internet / layanan cloud</h3><p className="mt-1 text-[10px] text-slate-600 sm:text-xs">Jalur utama untuk akses dari luar lokasi garasi</p></div>
+                  <span className={`rounded-full px-2.5 py-1 text-[9px] font-bold uppercase ${scenario === "web_down" || (scenario === "power_out" && !backupPowerOn) ? "bg-rose-100 text-rose-800" : scenario === "power_out" ? "bg-amber-100 text-amber-800" : "bg-emerald-100 text-emerald-800"}`}>{scenario === "web_down" ? "Cloud down" : scenario === "power_out" && !backupPowerOn ? "Tidak ada telemetry" : scenario === "power_out" ? "Tergantung UPS + WAN" : "Jalur normal"}</span>
+                </div>
+                <div className="grid gap-2 sm:grid-cols-[1fr_auto_1fr] sm:items-center">
+                  <TopologyDevice icon={Cloud} title="EMQX Cloud" detail="Broker MQTT · TLS 8883 / WSS 8084 · topik esp32/garasi" state={mode === "realtime" ? mqttConnected ? "active" : "standby" : scenario === "normal" ? "active" : scenario === "web_down" || !backupPowerOn ? "down" : "conditional"} stateText={mode === "realtime" ? mqttConnected ? "Terhubung" : "Menunggu" : scenario === "normal" ? "Aktif" : scenario === "web_down" || !backupPowerOn ? "Down" : "Kondisional"} />
+                  <span className="hidden text-center text-slate-400 sm:block" aria-hidden="true">&rarr;</span>
+                  <TopologyDevice icon={Gauge} title="Dashboard Vercel" detail="Next.js · dibuka pengguna melalui browser" state={mode === "realtime" ? "active" : scenario === "normal" ? "active" : "down"} stateText={mode === "realtime" ? "Website" : scenario === "normal" ? "Aktif" : "Down"} />
+                </div>
+              </section>
+
+              <div className="my-2 text-center text-[10px] font-semibold text-slate-500 sm:my-3">Akses internet menghubungkan jaringan garasi dengan broker dan dashboard</div>
+              <div className="grid gap-3 md:grid-cols-2">
+                <section className={`rounded-xl border-2 border-dashed p-3 sm:p-4 ${!simulatedDevicePowered && mode === "simulation" ? "border-rose-300 bg-rose-50" : "border-amber-300 bg-amber-50"}`}>
+                  <div className="mb-3"><h3 className="text-xs font-extrabold sm:text-sm">Area garasi · Router A</h3><p className="mt-1 text-[10px] text-slate-600 sm:text-xs">Wi-Fi perangkat dan akses lokal</p></div>
+                  <div className="grid gap-2">
+                    <TopologyDevice icon={Activity} title="ESP32 + DHT22 + relay" detail={mode === "simulation" ? !simulatedDevicePowered ? "Mati tanpa UPS; sensor dan relay tidak bekerja." : "GPIO 4 membaca suhu/kelembapan · GPIO 2 mengendalikan relay." : `Suhu ${formatValue(temperature, "°C")} · kelembapan ${formatValue(humidity, "%")}`} state={mode === "simulation" ? simulatedDevicePowered ? "active" : "down" : mqttConnected ? "active" : "standby"} stateText={mode === "simulation" ? simulatedDevicePowered ? "Aktif" : "Mati" : mqttConnected ? "Online" : "Status lokal"} />
+                    <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-1 text-center text-[9px] font-semibold text-slate-500 sm:text-[10px]"><span>Wi-Fi / LAN</span><span className="text-slate-400">&rarr;</span><span>Internet ke EMQX</span></div>
+                    <TopologyDevice icon={Wifi} title="Router A" detail={mode === "simulation" ? !simulatedDevicePowered ? "Tidak menyala tanpa UPS." : "ESP32 dan ponsel lokal terhubung ke jaringan ini." : "Jaringan Wi-Fi tempat ESP32 terhubung."} state={mode === "simulation" ? simulatedDevicePowered ? "active" : "down" : mqttConnected ? "active" : "standby"} stateText={mode === "simulation" ? simulatedDevicePowered ? "Wi-Fi lokal" : "Mati" : mqttConnected ? "Terhubung" : "Menunggu"} />
+                  </div>
+                </section>
+
+                <section className="rounded-xl border-2 border-dashed border-teal-300 bg-teal-50 p-3 sm:p-4">
+                  <div className="mb-3"><h3 className="text-xs font-extrabold sm:text-sm">Area pengguna · Router B</h3><p className="mt-1 text-[10px] text-slate-600 sm:text-xs">HP / laptop mengakses dashboard</p></div>
+                  <div className="grid gap-2">
+                    <TopologyDevice icon={Wifi} title="Router B / Internet pengguna" detail="Jaringan pengguna berbeda; jalur cloud memakai internet. Akses IP lokal butuh WireGuard jika dikonfigurasi." state={scenario === "normal" || mode === "realtime" ? "active" : scenario === "power_out" && backupPowerOn ? "conditional" : "standby"} stateText={scenario === "normal" || mode === "realtime" ? "Internet" : scenario === "power_out" && backupPowerOn ? "Kondisional" : "Terpisah"} />
+                    <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-1 text-center text-[9px] font-semibold text-slate-500 sm:text-[10px]"><span>Browser</span><span className="text-slate-400">&rarr;</span><span>Vercel / MQTT WSS</span></div>
+                    <TopologyDevice icon={Home} title="Dashboard HP / laptop" detail={mode === "simulation" && scenario !== "normal" && simulatedDevicePowered ? "Gunakan dashboard lokal ESP32 di Wi-Fi Router A." : mode === "simulation" && !simulatedDevicePowered ? "Offline; gunakan akses manual." : "Monitoring suhu, kelembapan, dan kendali relay."} state={mode === "simulation" ? !simulatedDevicePowered ? "down" : scenario === "normal" ? "active" : "conditional" : mqttConnected ? "active" : "standby"} stateText={mode === "simulation" ? !simulatedDevicePowered ? "Offline" : scenario === "normal" ? "Cloud" : "Pakai lokal" : mqttConnected ? "Live" : "Menunggu"} />
+                  </div>
+                </section>
+              </div>
+
+              <div className={`mt-3 rounded-xl border p-3 ${scenario === "web_down" || (scenario === "power_out" && backupPowerOn) ? "border-emerald-300 bg-emerald-50" : scenario === "power_out" ? "border-rose-300 bg-rose-50" : "border-slate-200 bg-white"}`}>
+                <div className="flex flex-wrap items-center gap-2 text-[11px] sm:text-xs"><strong className="text-emerald-800">Jalur cadangan lokal:</strong><span>ESP32 WebServer</span><span aria-hidden="true">&rarr;</span><span>HP di Wi-Fi Router A</span><code className="rounded bg-white px-2 py-1 text-cyan-800">http://192.168.88.50/</code><span className="ml-auto font-bold">{!simulatedDevicePowered && mode === "simulation" ? "OFFLINE" : scenario === "web_down" || (scenario === "power_out" && backupPowerOn) ? "AKTIF" : "SIAP"}</span></div>
+                <p className="mt-1 text-[10px] leading-4 text-slate-600">Alamat ini berlaku jika DHCP lease tetap sudah disetel; jika belum, cek IP di Serial Monitor. Jalur lokal tidak melewati EMQX atau Vercel.</p>
+              </div>
+            </div>
+
+            <div className="hidden grid items-stretch gap-2 xl:grid-cols-[minmax(0,1fr)_28px_minmax(0,1fr)_28px_minmax(0,1fr)_28px_minmax(0,1fr)]">
               <DiagramNode icon={scenario === "power_out" && !backupPowerOn ? WifiOff : Activity} number="1" title={mode === "simulation" ? "ESP32 Garasi" : selectedDevice?.device_name ?? "ESP32"} subtitle={mode === "simulation" ? scenario === "web_down" ? "DHT22 + relay + web lokal" : "DHT22 + relay" : "Sensor dan aktuator"} detail={mode === "simulation" ? !simulatedDevicePowered ? "Tidak mendapat daya; tidak ada bacaan sensor baru." : `Suhu ${formatValue(displayTemperature, "\u00b0C")} - kelembapan ${formatValue(displayHumidity, "%")} - relay ${scenario === "normal" && step === 3 ? "ON" : "OFF"}` : `Suhu ${formatValue(temperature, "\u00b0C")} - kelembapan ${formatValue(humidity, "%")}`} active={activeNode === 0} good={mode === "simulation" && simulatedDevicePowered} failed={mode === "simulation" && !simulatedDevicePowered} />
               <div className="hidden items-center justify-center text-cyan-300 xl:flex"><ArrowRight size={20} className={activeNode >= 1 ? "animate-pulse" : "text-slate-700"} /></div>
               <div className="flex items-center justify-center text-cyan-300 xl:hidden"><ArrowDown size={18} className={activeNode >= 1 ? "animate-pulse" : "text-slate-700"} /></div>
