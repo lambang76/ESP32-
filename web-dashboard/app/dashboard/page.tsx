@@ -469,6 +469,12 @@ export default function DashboardPage() {
               <Home size={15} /> <span className="hidden sm:inline">Beranda</span>
             </Link>
             <Link
+              href="/simulasi"
+              className="inline-flex items-center gap-2 rounded-full border border-slate-700 bg-slate-900/70 px-3 py-1.5 text-xs font-medium text-slate-300 transition hover:border-cyan-400/40 hover:text-cyan-200 sm:px-4 sm:py-2 sm:text-sm"
+            >
+              <Activity size={15} /> Simulasi
+            </Link>
+            <Link
               href="/panduan"
               className="inline-flex items-center rounded-full border border-slate-700 bg-slate-900/70 px-3 py-1.5 text-xs font-medium text-slate-300 transition hover:border-cyan-400/40 hover:text-cyan-200 sm:px-4 sm:py-2 sm:text-sm"
             >

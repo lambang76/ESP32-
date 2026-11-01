@@ -96,10 +96,14 @@ export default function HomePage() {
           <div className="hidden items-center gap-7 text-sm text-slate-400 md:flex">
             <a href="#fitur" className="transition hover:text-white">Fitur</a>
             <a href="#cara-kerja" className="transition hover:text-white">Cara kerja</a>
+            <Link href="/simulasi" className="transition hover:text-white">Simulasi</Link>
             <Link href="/forum" className="transition hover:text-white">Forum</Link>
           </div>
 
           <div className="flex w-full items-center justify-between gap-1.5 sm:w-auto sm:justify-start sm:gap-2">
+            <Link href="/simulasi" className="rounded-xl px-2 py-2 text-xs font-medium text-slate-300 transition hover:text-cyan-200 sm:px-3 sm:text-sm md:hidden">
+              Simulasi
+            </Link>
             <Link href="/forum" className="rounded-xl px-2 py-2 text-xs font-medium text-slate-300 transition hover:text-cyan-200 sm:px-3 sm:text-sm md:hidden">
               Forum
             </Link>
