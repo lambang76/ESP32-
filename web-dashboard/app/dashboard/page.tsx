@@ -511,67 +511,6 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        <section className="mb-6 rounded-3xl border border-slate-700/70 bg-slate-900/55 p-4 shadow-2xl shadow-black/20 backdrop-blur-xl sm:p-6" aria-label="Topologi koneksi Smart Garage">
-          <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
-            <div>
-              <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-cyan-300">Topologi sistem</p>
-              <h3 className="mt-1 text-lg font-semibold">Jalur perangkat, cloud, dan dashboard</h3>
-              <p className="mt-1 text-xs leading-5 text-slate-400">Panah bergerak saat MQTT tersambung. EMQX membawa pesan; Vercel menyajikan halaman web.</p>
-            </div>
-            <span className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-semibold ${isConnected ? "border-emerald-300/20 bg-emerald-300/10 text-emerald-200" : "border-rose-300/20 bg-rose-300/10 text-rose-200"}`}>
-              <span className={`relative h-2 w-2 rounded-full ${isConnected ? "bg-emerald-300" : "bg-rose-300"}`}>
-                {isConnected && <span className="absolute inset-0 animate-ping rounded-full bg-emerald-300/70" />}
-              </span>
-              {isConnected ? "Jalur MQTT aktif" : "Menunggu koneksi MQTT"}
-            </span>
-          </div>
-
-          <div className="rounded-2xl border-2 border-dashed border-sky-400/60 bg-sky-400/[0.06] p-3 sm:p-4">
-            <div className="mb-3 flex flex-wrap items-start justify-between gap-2">
-              <div><p className="text-[9px] font-bold uppercase tracking-[0.18em] text-sky-300">Zona internet &amp; cloud</p><h4 className="mt-1 text-sm font-bold text-white">Layanan jarak jauh</h4><p className="mt-1 text-xs text-slate-400">Broker MQTT dan website adalah layanan berbeda.</p></div>
-              <span className="rounded-full bg-emerald-300/10 px-2.5 py-1 text-[9px] font-bold uppercase tracking-wide text-emerald-200">{isConnected ? "Terhubung" : "Menunggu"}</span>
-            </div>
-            <div className="grid gap-2 md:grid-cols-[minmax(0,1fr)_2.5rem_minmax(0,0.72fr)_2.5rem_minmax(0,1fr)] md:items-center">
-              <article className={`rounded-xl border p-3 transition ${isConnected ? "border-emerald-300/40 bg-emerald-300/[0.08]" : "border-slate-700 bg-slate-900/70"}`}>
-                <div className="flex items-start gap-3"><span className="rounded-lg bg-white/10 p-2 text-emerald-200"><Cloud size={18} /></span><div className="min-w-0"><p className="text-xs font-bold text-white">EMQX Cloud</p><p className="mt-1 text-[10px] leading-4 text-slate-400">Broker MQTT · TLS 8883 / WSS 8084</p><p className="mt-1 break-all font-mono text-[10px] text-cyan-200">{selectedDevice?.topic_sub || "Topik perangkat belum dipilih"}</p></div></div>
-              </article>
-              <div className={`flex items-center justify-center ${isConnected ? "text-cyan-300" : "text-slate-600"}`} aria-hidden="true"><ArrowRight className={`rotate-90 md:rotate-0 ${isConnected ? "motion-safe:animate-pulse" : ""}`} size={20} /></div>
-              <article className="rounded-xl border border-sky-300/20 bg-slate-900/70 p-3 text-center">
-                <Cloud className="mx-auto text-sky-200" size={19} /><p className="mt-1 text-xs font-bold text-white">Internet / WAN</p><p className="mt-1 text-[10px] leading-4 text-slate-400">Menghubungkan jaringan garasi dan pengguna</p>
-              </article>
-              <div className={`flex items-center justify-center ${isConnected ? "text-cyan-300" : "text-slate-600"}`} aria-hidden="true"><ArrowRight className={`rotate-90 md:rotate-0 ${isConnected ? "motion-safe:animate-pulse" : ""}`} size={20} /></div>
-              <article className="rounded-xl border border-emerald-300/30 bg-emerald-300/[0.06] p-3">
-                <div className="flex items-start gap-3"><span className="rounded-lg bg-white/10 p-2 text-emerald-200"><Activity size={18} /></span><div><p className="text-xs font-bold text-white">Dashboard Vercel</p><p className="mt-1 text-[10px] leading-4 text-slate-400">Next.js UI dimuat lewat HTTPS. MQTT.js di browser terhubung langsung ke EMQX via WSS.</p></div></div>
-              </article>
-            </div>
-          </div>
-
-          <div className="my-3 grid gap-2 md:grid-cols-2">
-            <div className={`flex items-center justify-center gap-2 rounded-xl border px-3 py-2 text-center text-[10px] font-semibold ${isConnected ? "border-cyan-300/25 bg-cyan-300/[0.06] text-cyan-100" : "border-slate-700 bg-slate-900/50 text-slate-500"}`}>
-              <span>ESP32</span><ArrowRight className={isConnected ? "motion-safe:animate-pulse" : ""} size={14} /><span>Router A</span><ArrowRight className={isConnected ? "motion-safe:animate-pulse" : ""} size={14} /><span>EMQX</span>
-              <span className="hidden text-slate-500 sm:inline">· telemetry &amp; perintah relay</span>
-            </div>
-            <div className={`flex items-center justify-center gap-2 rounded-xl border px-3 py-2 text-center text-[10px] font-semibold ${isConnected ? "border-violet-300/25 bg-violet-300/[0.06] text-violet-100" : "border-slate-700 bg-slate-900/50 text-slate-500"}`}>
-              <span>Browser / Router B</span><ArrowRight className={isConnected ? "motion-safe:animate-pulse" : ""} size={14} /><span>Vercel (HTTPS)</span><span className="text-slate-500">· MQTT WSS ↔ EMQX</span>
-            </div>
-          </div>
-
-          <div className="grid gap-3 md:grid-cols-2">
-            <section className="rounded-2xl border-2 border-dashed border-amber-300/60 bg-amber-300/[0.04] p-3 sm:p-4">
-              <div className="mb-3"><p className="text-[9px] font-bold uppercase tracking-[0.18em] text-amber-200">Zona perangkat</p><h4 className="mt-1 text-sm font-bold text-white">Area garasi · Router A</h4><p className="mt-1 text-xs text-slate-400">Perangkat terpilih: {selectedDevice?.device_name || "belum dipilih"}</p></div>
-              <article className="rounded-xl border border-slate-700 bg-slate-900/80 p-3"><div className="flex items-center gap-3"><span className="rounded-lg bg-cyan-300/10 p-2 text-cyan-200"><Activity size={18} /></span><div><p className="text-xs font-bold text-white">ESP32 + relay</p><p className="mt-1 text-[10px] text-slate-400">Menerima perintah dan mengirim status perangkat</p></div></div></article>
-              <div className={`flex flex-col items-center py-2 text-[10px] font-semibold ${isConnected ? "text-cyan-200" : "text-slate-600"}`}><span className={`h-5 w-px bg-current ${isConnected ? "motion-safe:animate-pulse" : ""}`} /><ArrowRight className={`rotate-90 ${isConnected ? "motion-safe:animate-pulse" : ""}`} size={17} /><span>Wi-Fi / LAN</span></div>
-              <article className="rounded-xl border border-emerald-300/30 bg-emerald-300/[0.06] p-3"><div className="flex items-center gap-3"><span className="rounded-lg bg-white/10 p-2 text-emerald-200"><Wifi size={18} /></span><div><p className="text-xs font-bold text-white">Router A</p><p className="mt-1 text-[10px] text-slate-400">Gateway jaringan lokal garasi</p></div></div></article>
-            </section>
-
-            <section className="rounded-2xl border-2 border-dashed border-teal-300/60 bg-teal-300/[0.04] p-3 sm:p-4">
-              <div className="mb-3"><p className="text-[9px] font-bold uppercase tracking-[0.18em] text-teal-200">Zona pengguna</p><h4 className="mt-1 text-sm font-bold text-white">Area pengguna · Router B</h4><p className="mt-1 text-xs text-slate-400">Akses dari HP atau laptop</p></div>
-              <article className="rounded-xl border border-emerald-300/30 bg-emerald-300/[0.06] p-3"><div className="flex items-center gap-3"><span className="rounded-lg bg-white/10 p-2 text-emerald-200"><Wifi size={18} /></span><div><p className="text-xs font-bold text-white">Router B / internet pengguna</p><p className="mt-1 text-[10px] text-slate-400">Membuka website dan koneksi MQTT WSS</p></div></div></article>
-              <div className={`flex flex-col items-center py-2 text-[10px] font-semibold ${isConnected ? "text-cyan-200" : "text-slate-600"}`}><span className={`h-5 w-px bg-current ${isConnected ? "motion-safe:animate-pulse" : ""}`} /><ArrowRight className={`rotate-90 ${isConnected ? "motion-safe:animate-pulse" : ""}`} size={17} /><span>Browser / HTTPS + MQTT WSS</span></div>
-              <article className="rounded-xl border border-slate-700 bg-slate-900/80 p-3"><div className="flex items-center gap-3"><span className="rounded-lg bg-cyan-300/10 p-2 text-cyan-200"><Home size={18} /></span><div><p className="text-xs font-bold text-white">Dashboard HP / laptop</p><p className="mt-1 text-[10px] text-slate-400">Pantau status pintu dan kirim perintah relay</p></div></div></article>
-            </section>
-          </div>
-        </section>
 
         <section className="grid gap-4 md:grid-cols-2 xl:gap-5" aria-label="Garage status and metrics">
           <article
