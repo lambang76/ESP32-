@@ -23,19 +23,19 @@ export default function SignupPage() {
     setNotice(null);
 
     if (!supabase) {
-      setError("Konfigurasi Supabase belum tersedia.");
+      setError("Supabase is not configured.");
       return;
     }
     if (!/^[a-zA-Z0-9_]{3,24}$/.test(username.trim())) {
-      setError("Username harus 3–24 karakter dan hanya boleh berisi huruf, angka, atau underscore.");
+      setError("Username must be 3–24 characters and may contain only letters, numbers, or underscores.");
       return;
     }
     if (password.length < 8) {
-      setError("Password minimal 8 karakter.");
+      setError("Password must be at least 8 characters.");
       return;
     }
     if (password !== confirmPassword) {
-      setError("Konfirmasi password belum cocok.");
+      setError("Passwords do not match.");
       return;
     }
 
@@ -52,9 +52,9 @@ export default function SignupPage() {
     if (signupError) {
       const normalizedMessage = signupError.message.toLowerCase();
       if (signupError.code === "over_email_send_rate_limit" || normalizedMessage.includes("email rate limit exceeded")) {
-        setError("Pendaftaran belum bisa mengirim email konfirmasi karena batas pengiriman email Supabase tercapai. Coba lagi nanti atau hubungi pengelola untuk mengaktifkan SMTP khusus.");
+        setError("We could not send a confirmation email because the Supabase email sending limit has been reached. Try again later or ask an administrator to configure a custom SMTP provider.");
       } else {
-        setError("Akun belum berhasil dibuat. Periksa kembali data dan koneksi, lalu coba lagi.");
+        setError("We could not create your account. Check your details and connection, then try again.");
       }
       setLoading(false);
       return;
@@ -66,14 +66,14 @@ export default function SignupPage() {
       return;
     }
 
-    setNotice("Akun dibuat. Buka email untuk mengonfirmasi alamat email sebelum masuk.");
+    setNotice("Your account has been created. Check your email to confirm your address before signing in.");
     setLoading(false);
   }
 
   return (
     <AuthShell
-      title="Buat akun anggota"
-      description="Daftar untuk mengakses dashboard Smart Garage JTD."
+      title="Create a member account"
+      description="Sign up to access the JTD Smart Garage dashboard."
       icon={UserRoundPlus}
     >
       <form onSubmit={handleSubmit} className="space-y-4">
@@ -89,10 +89,10 @@ export default function SignupPage() {
             required
             value={username}
             onChange={(event) => setUsername(event.target.value)}
-            placeholder="contoh: anggota_jtd"
+            placeholder="e.g. jtd_member"
             className="w-full rounded-xl border border-slate-700 bg-slate-950/70 px-4 py-3 text-sm text-white outline-none transition placeholder:text-slate-600 focus:border-cyan-400/70 focus:ring-2 focus:ring-cyan-400/10"
           />
-          <p className="mt-1.5 text-xs text-slate-500">3–24 karakter: huruf, angka, dan underscore.</p>
+          <p className="mt-1.5 text-xs text-slate-500">3–24 characters: letters, numbers, and underscores.</p>
         </div>
         <div>
           <label htmlFor="email" className="mb-2 block text-sm font-medium text-slate-300">Email</label>
@@ -103,7 +103,7 @@ export default function SignupPage() {
             required
             value={email}
             onChange={(event) => setEmail(event.target.value)}
-            placeholder="nama@kampus.ac.id"
+            placeholder="name@example.com"
             className="w-full rounded-xl border border-slate-700 bg-slate-950/70 px-4 py-3 text-sm text-white outline-none transition placeholder:text-slate-600 focus:border-cyan-400/70 focus:ring-2 focus:ring-cyan-400/10"
           />
         </div>
@@ -118,13 +118,13 @@ export default function SignupPage() {
             required
             value={password}
             onChange={(event) => setPassword(event.target.value)}
-            placeholder="Minimal 8 karakter"
+            placeholder="At least 8 characters"
             className="w-full rounded-xl border border-slate-700 bg-slate-950/70 px-4 py-3 text-sm text-white outline-none transition placeholder:text-slate-600 focus:border-cyan-400/70 focus:ring-2 focus:ring-cyan-400/10"
           />
         </div>
 
         <div>
-          <label htmlFor="confirm-password" className="mb-2 block text-sm font-medium text-slate-300">Ulangi password</label>
+          <label htmlFor="confirm-password" className="mb-2 block text-sm font-medium text-slate-300">Confirm password</label>
           <input
             id="confirm-password"
             type="password"
@@ -133,7 +133,7 @@ export default function SignupPage() {
             required
             value={confirmPassword}
             onChange={(event) => setConfirmPassword(event.target.value)}
-            placeholder="Ulangi password"
+            placeholder="Confirm your password"
             className="w-full rounded-xl border border-slate-700 bg-slate-950/70 px-4 py-3 text-sm text-white outline-none transition placeholder:text-slate-600 focus:border-cyan-400/70 focus:ring-2 focus:ring-cyan-400/10"
           />
         </div>
@@ -146,13 +146,13 @@ export default function SignupPage() {
           disabled={loading || !supabase}
           className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-cyan-400 px-5 py-3.5 text-sm font-bold text-slate-950 shadow-lg shadow-cyan-950/30 transition hover:bg-cyan-300 disabled:cursor-not-allowed disabled:opacity-50"
         >
-          {loading ? "Membuat akun..." : "Daftar"}
+          {loading ? "Creating account..." : "Sign up"}
           {!loading && <ArrowRight size={17} />}
         </button>
       </form>
 
       <p className="mt-6 text-center text-sm text-slate-400">
-        Sudah punya akun? <Link href="/login" className="font-semibold text-cyan-300 hover:text-cyan-200">Masuk</Link>
+        Already have an account? <Link href="/login" className="font-semibold text-cyan-300 hover:text-cyan-200">Sign in</Link>
       </p>
     </AuthShell>
   );

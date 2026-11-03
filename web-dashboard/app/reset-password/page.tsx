@@ -17,7 +17,7 @@ export default function ResetPasswordPage() {
 
   useEffect(() => {
     if (!supabase) {
-      setError("Konfigurasi Supabase belum tersedia.");
+      setError("Supabase is not configured.");
       setCheckingRecovery(false);
       return;
     }
@@ -47,15 +47,15 @@ export default function ResetPasswordPage() {
     setError(null);
 
     if (!supabase || !canReset) {
-      setError("Tautan pemulihan tidak valid atau sudah kedaluwarsa.");
+      setError("This recovery link is invalid or has expired.");
       return;
     }
     if (password.length < 8) {
-      setError("Password minimal 8 karakter.");
+      setError("Password must be at least 8 characters.");
       return;
     }
     if (password !== confirmPassword) {
-      setError("Konfirmasi password belum cocok.");
+      setError("Passwords do not match.");
       return;
     }
 
@@ -74,34 +74,34 @@ export default function ResetPasswordPage() {
 
   return (
     <AuthShell
-      title="Buat password baru"
-      description="Pilih password baru untuk akun Smart Garage kamu."
+      title="Create a new password"
+      description="Choose a new password for your Smart Garage account."
       icon={KeyRound}
     >
       {checkingRecovery ? (
-        <p className="text-sm text-slate-400">Memeriksa tautan pemulihan...</p>
+        <p className="text-sm text-slate-400">Checking recovery link...</p>
       ) : success ? (
         <div className="space-y-5">
           <p role="status" className="rounded-xl border border-emerald-400/20 bg-emerald-400/10 px-4 py-3 text-sm text-emerald-200">
-            Password berhasil diperbarui. Silakan masuk dengan password baru.
+            Your password has been updated. Please sign in with your new password.
           </p>
           <Link href="/login" className="inline-flex items-center gap-2 text-sm font-semibold text-cyan-300 hover:text-cyan-200">
-            <ArrowLeft size={16} /> Ke halaman login
+            <ArrowLeft size={16} /> Go to sign in
           </Link>
         </div>
       ) : !canReset ? (
         <div className="space-y-5">
           <p role="alert" className="rounded-xl border border-rose-400/20 bg-rose-400/10 px-4 py-3 text-sm text-rose-200">
-            Tautan pemulihan tidak valid atau sudah kedaluwarsa. Minta tautan baru untuk melanjutkan.
+            This recovery link is invalid or has expired. Request a new link to continue.
           </p>
           <Link href="/forgot-password" className="inline-flex items-center gap-2 text-sm font-semibold text-cyan-300 hover:text-cyan-200">
-            Kirim ulang tautan reset
+            Request another reset link
           </Link>
         </div>
       ) : (
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label htmlFor="password" className="mb-2 block text-sm font-medium text-slate-300">Password baru</label>
+            <label htmlFor="password" className="mb-2 block text-sm font-medium text-slate-300">New password</label>
             <input
               id="password"
               type="password"
@@ -110,13 +110,13 @@ export default function ResetPasswordPage() {
               required
               value={password}
               onChange={(event) => setPassword(event.target.value)}
-              placeholder="Minimal 8 karakter"
+              placeholder="At least 8 characters"
               className="w-full rounded-xl border border-slate-700 bg-slate-950/70 px-4 py-3 text-sm text-white outline-none transition placeholder:text-slate-600 focus:border-cyan-400/70 focus:ring-2 focus:ring-cyan-400/10"
             />
           </div>
 
           <div>
-            <label htmlFor="confirm-password" className="mb-2 block text-sm font-medium text-slate-300">Ulangi password baru</label>
+            <label htmlFor="confirm-password" className="mb-2 block text-sm font-medium text-slate-300">Confirm new password</label>
             <input
               id="confirm-password"
               type="password"
@@ -125,7 +125,7 @@ export default function ResetPasswordPage() {
               required
               value={confirmPassword}
               onChange={(event) => setConfirmPassword(event.target.value)}
-              placeholder="Ulangi password baru"
+              placeholder="Confirm your new password"
               className="w-full rounded-xl border border-slate-700 bg-slate-950/70 px-4 py-3 text-sm text-white outline-none transition placeholder:text-slate-600 focus:border-cyan-400/70 focus:ring-2 focus:ring-cyan-400/10"
             />
           </div>
@@ -137,7 +137,7 @@ export default function ResetPasswordPage() {
             disabled={loading}
             className="inline-flex w-full items-center justify-center rounded-xl bg-cyan-400 px-5 py-3.5 text-sm font-bold text-slate-950 shadow-lg shadow-cyan-950/30 transition hover:bg-cyan-300 disabled:cursor-not-allowed disabled:opacity-50"
           >
-            {loading ? "Menyimpan..." : "Simpan password baru"}
+            {loading ? "Saving..." : "Save new password"}
           </button>
         </form>
       )}

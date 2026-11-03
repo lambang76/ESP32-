@@ -111,7 +111,7 @@ export default function DashboardPage() {
   const appendLog = useCallback((topic: string, payload: string) => {
     const entry: TerminalEntry = {
       id: Date.now() + Math.random(),
-      time: new Date().toLocaleTimeString("id-ID", { hour12: false }),
+      time: new Date().toLocaleTimeString("en-US", { hour12: false }),
       topic,
       payload,
     };
@@ -161,7 +161,7 @@ export default function DashboardPage() {
       }
 
       if (!supabase) {
-        setDeviceError("Konfigurasi Supabase belum diisi.");
+          setDeviceError("Supabase is not configured.");
         setDevicesLoading(false);
         return;
       }
@@ -182,7 +182,7 @@ export default function DashboardPage() {
         }
       } catch (error) {
         if (!cancelled) {
-          setDeviceError(error instanceof Error ? error.message : "Gagal memuat perangkat.");
+          setDeviceError(error instanceof Error ? error.message : "Failed to load devices.");
           setDevices([]);
         }
       } finally {
@@ -205,7 +205,7 @@ export default function DashboardPage() {
 
     if (!host || !username || !password) {
       setConnection("Missing EMQX configuration");
-      appendLog("mqtt", "Konfigurasi broker belum lengkap");
+      appendLog("mqtt", "Broker configuration is incomplete");
       return;
     }
 
@@ -223,17 +223,17 @@ export default function DashboardPage() {
       setConnection("Connected");
       subscribedTopicRef.current = null;
       setMqttConnected(true);
-      appendLog("mqtt", "Terhubung ke broker MQTT");
+      appendLog("mqtt", "Connected to the MQTT broker");
     });
     client.on("reconnect", () => {
       setConnection("Reconnecting");
       setMqttConnected(false);
-      appendLog("mqtt", "Mencoba menyambungkan ulang...");
+      appendLog("mqtt", "Attempting to reconnect...");
     });
     client.on("offline", () => {
       setConnection("Offline");
       setMqttConnected(false);
-      appendLog("mqtt", "Koneksi broker offline");
+      appendLog("mqtt", "Broker connection is offline");
     });
     client.on("close", () => setMqttConnected(false));
     client.on("error", (error) => {
@@ -336,7 +336,7 @@ export default function DashboardPage() {
         }
         if (error) {
           setConnection("Subscription failed");
-          appendLog("mqtt:error", `Gagal subscribe ${nextTopic}: ${error.message}`);
+          appendLog("mqtt:error", `Failed to subscribe to ${nextTopic}: ${error.message}`);
         } else {
           subscribedTopicRef.current = nextTopic;
           appendLog("mqtt", `Subscribe ${nextTopic}`);
@@ -347,7 +347,7 @@ export default function DashboardPage() {
     if (previousTopic) {
       client.unsubscribe(previousTopic, (error) => {
         if (generation !== subscriptionGenerationRef.current) return;
-        if (error) appendLog("mqtt:error", `Gagal unsubscribe ${previousTopic}`);
+        if (error) appendLog("mqtt:error", `Failed to unsubscribe from ${previousTopic}`);
         else appendLog("mqtt", `Unsubscribe ${previousTopic}`);
         subscribeToSelectedDevice();
       });
@@ -368,7 +368,7 @@ export default function DashboardPage() {
 
     client.publish(topic, command, { qos: 1 }, (error) => {
       if (error) {
-        appendLog("mqtt:error", `Gagal mengirim ${command}: ${error.message}`);
+        appendLog("mqtt:error", `Failed to send ${command}: ${error.message}`);
       } else {
         setLastCommand(command);
         appendLog(topic, command);
@@ -387,8 +387,8 @@ export default function DashboardPage() {
       <main className="grid min-h-screen place-items-center bg-[#07111e] px-5 text-slate-100">
         <div className="rounded-2xl border border-white/10 bg-slate-900/80 px-6 py-5 text-center shadow-2xl">
           <div className="mx-auto mb-3 h-8 w-8 animate-spin rounded-full border-2 border-cyan-300/20 border-t-cyan-300" />
-          <p className="text-sm text-slate-300">{supabase ? "Memeriksa sesi login..." : "Konfigurasi Supabase belum tersedia."}</p>
-          {!supabase && <a className="mt-3 inline-block text-sm text-cyan-300 hover:text-cyan-200" href="/login">Buka halaman login</a>}
+          <p className="text-sm text-slate-300">{supabase ? "Checking sign-in session..." : "Supabase is not configured."}</p>
+          {!supabase && <a className="mt-3 inline-block text-sm text-cyan-300 hover:text-cyan-200" href="/login">Open sign-in page</a>}
         </div>
       </main>
     );
@@ -428,19 +428,19 @@ export default function DashboardPage() {
               href="/"
               className="inline-flex items-center gap-2 rounded-full border border-slate-700 bg-slate-900/70 px-3 py-1.5 text-xs font-medium text-slate-300 transition hover:border-slate-500 hover:text-white sm:px-4 sm:py-2 sm:text-sm"
             >
-              <Home size={15} /> <span className="hidden sm:inline">Beranda</span>
+              <Home size={15} /> <span className="hidden sm:inline">Home</span>
             </Link>
             <Link
               href="/simulasi"
               className="inline-flex items-center gap-2 rounded-full border border-slate-700 bg-slate-900/70 px-3 py-1.5 text-xs font-medium text-slate-300 transition hover:border-cyan-400/40 hover:text-cyan-200 sm:px-4 sm:py-2 sm:text-sm"
             >
-              <Activity size={15} /> Simulasi
+              <Activity size={15} /> Simulation
             </Link>
             <Link
               href="/panduan"
               className="inline-flex items-center rounded-full border border-slate-700 bg-slate-900/70 px-3 py-1.5 text-xs font-medium text-slate-300 transition hover:border-cyan-400/40 hover:text-cyan-200 sm:px-4 sm:py-2 sm:text-sm"
             >
-              Panduan
+              Guide
             </Link>
             <Link
               href="/forum"
@@ -464,7 +464,7 @@ export default function DashboardPage() {
               onClick={logout}
               className="inline-flex items-center gap-2 rounded-full border border-slate-700 bg-slate-900/70 px-3 py-1.5 text-xs font-medium text-slate-300 transition hover:border-slate-500 hover:text-white sm:px-4 sm:py-2 sm:text-sm"
             >
-              <LogOut size={15} /> Keluar
+              <LogOut size={15} /> Sign out
             </button>
           </div>
         </div>
@@ -475,16 +475,16 @@ export default function DashboardPage() {
           <div>
             <p className="text-[11px] font-medium tracking-[0.12em] text-cyan-300 sm:text-sm sm:tracking-normal">SMART ACCESS · REAL-TIME MONITORING</p>
             <h2 className="mt-2 text-2xl font-semibold tracking-tight sm:text-3xl lg:text-4xl">
-              Garasi & pagar pintar
+              Smart garage and gate
             </h2>
             <p className="mt-2 max-w-xl text-sm leading-6 text-slate-400">
-              Pantau status pintu garasi dan akses RFID dari satu panel.
+              Monitor garage door status and RFID access from one dashboard.
             </p>
           </div>
 
           <div className="w-full lg:max-w-sm">
             <label htmlFor="device-select" className="mb-2 block text-xs font-semibold uppercase tracking-wider text-slate-400">
-              Perangkat aktif
+              Active device
             </label>
             <div className="relative">
               <select
@@ -497,8 +497,8 @@ export default function DashboardPage() {
                 disabled={devicesLoading || devices.length === 0}
                 className="w-full appearance-none rounded-xl border border-slate-700/80 bg-slate-900/80 px-4 py-3 pr-11 text-sm text-white shadow-inner shadow-black/20 outline-none backdrop-blur-xl transition focus:border-cyan-400/70 disabled:cursor-not-allowed disabled:opacity-50"
               >
-                {devicesLoading && <option value="">Memuat perangkat...</option>}
-                {!devicesLoading && devices.length === 0 && <option value="">Tidak ada perangkat</option>}
+                {devicesLoading && <option value="">Loading devices...</option>}
+                {!devicesLoading && devices.length === 0 && <option value="">No devices available</option>}
                 {devices.map((device) => (
                   <option key={device.id} value={String(device.id)}>
                     {device.device_name} · {device.device_type}
@@ -525,12 +525,12 @@ export default function DashboardPage() {
             <div className="absolute -right-8 -top-10 h-36 w-36 rounded-full bg-white/[0.03] blur-2xl" />
             <div className="relative flex items-start justify-between">
               <div>
-                <p className="text-sm font-medium text-slate-400">STATUS PINTU GARASI</p>
+                <p className="text-sm font-medium text-slate-400">GARAGE DOOR STATUS</p>
                 <h3 className="mt-5 text-3xl font-bold tracking-wide">
-                  {doorState === "open" ? "TERBUKA" : doorState === "closed" ? "TERTUTUP" : "MENUNGGU DATA"}
+                  {doorState === "open" ? "OPEN" : doorState === "closed" ? "CLOSED" : "WAITING FOR DATA"}
                 </h3>
                 <p className="mt-2 text-sm text-slate-400">
-                  {doorState === "open" ? "Akses garasi sedang terbuka" : doorState === "closed" ? "Garasi terkunci dan tertutup" : "Belum menerima status pintu"}
+                  {doorState === "open" ? "Garage access is open" : doorState === "closed" ? "Garage is locked and closed" : "No door status received yet"}
                 </p>
               </div>
               <div className={`rounded-2xl border p-4 ${doorState === "open" ? "border-amber-300/20 bg-amber-300/10 text-amber-200" : doorState === "closed" ? "border-emerald-300/20 bg-emerald-300/10 text-emerald-200" : "border-slate-700 bg-slate-800/70 text-slate-300"}`}>
@@ -539,18 +539,18 @@ export default function DashboardPage() {
             </div>
             <div className="relative mt-8 flex items-center gap-2 text-xs text-slate-400">
               <Activity size={15} className={doorState ? "text-cyan-300" : "text-slate-500"} />
-              <span>{selectedDevice?.device_name ?? "Pilih perangkat untuk mulai"}</span>
+              <span>{selectedDevice?.device_name ?? "Select a device to get started"}</span>
             </div>
           </article>
 
           <article className="relative min-h-56 overflow-hidden rounded-3xl border border-violet-300/15 bg-gradient-to-br from-violet-500/10 via-slate-900/85 to-slate-900 p-5 shadow-2xl shadow-violet-950/20 backdrop-blur-xl sm:min-h-64 sm:p-7">
             <div className="flex items-start justify-between">
               <div>
-                <p className="text-sm font-medium text-slate-400">AKSES RFID TERAKHIR</p>
+                <p className="text-sm font-medium text-slate-400">LATEST RFID ACCESS</p>
                 <h3 className="mt-5 break-all text-2xl font-semibold">
-                  {rfidValue ?? "Belum ada tap kartu"}
+                  {rfidValue ?? "No card tap recorded yet"}
                 </h3>
-                <p className="mt-2 text-sm text-slate-400">UID kartu atau nama pengguna</p>
+                <p className="mt-2 text-sm text-slate-400">Card UID or user name</p>
               </div>
               <div className="rounded-2xl border border-violet-300/20 bg-violet-300/10 p-4 text-violet-200">
                 <KeyRound size={28} />
@@ -565,16 +565,16 @@ export default function DashboardPage() {
         <section className="mt-5" aria-label="ESP32 device resource usage">
           <div className="mb-3 flex items-end justify-between gap-3">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-cyan-300">Performa perangkat</p>
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-cyan-300">DEVICE PERFORMANCE</p>
               <h3 className="mt-1 text-lg font-semibold">ESP32 health & resources</h3>
             </div>
-            <span className="hidden text-xs text-slate-500 sm:block">Diperbarui lewat MQTT telemetry</span>
+            <span className="hidden text-xs text-slate-500 sm:block">Updated via MQTT telemetry</span>
           </div>
 
           <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
             <article className="rounded-2xl border border-slate-700/70 bg-slate-900/65 p-4 shadow-lg shadow-black/10 backdrop-blur-xl sm:p-5">
               <div className="flex items-center justify-between">
-                <span className="text-sm text-slate-400">RAM terpakai</span>
+                <span className="text-sm text-slate-400">RAM used</span>
                 <HardDrive size={18} className="text-cyan-300" />
               </div>
               <p className="mt-3 text-2xl font-semibold">
@@ -588,7 +588,7 @@ export default function DashboardPage() {
               </div>
               <p className="mt-2 text-xs text-slate-500">
                 {formatBytes(usedHeapBytes)} / {formatBytes(deviceMetrics.totalHeapBytes)}
-                {deviceMetrics.minFreeHeapBytes !== null && ` · min bebas ${formatBytes(deviceMetrics.minFreeHeapBytes)}`}
+                {deviceMetrics.minFreeHeapBytes !== null && ` · min. free ${formatBytes(deviceMetrics.minFreeHeapBytes)}`}
               </p>
             </article>
 
@@ -602,7 +602,7 @@ export default function DashboardPage() {
               </p>
               <p className="mt-2 text-xs text-slate-500">
                 {deviceMetrics.cpuFrequencyMHz === null ? "Clock -- MHz" : `Clock ${deviceMetrics.cpuFrequencyMHz} MHz`}
-                {" · estimasi beban loop"}
+                {" · estimated loop load"}
               </p>
             </article>
 
@@ -613,19 +613,19 @@ export default function DashboardPage() {
               </div>
               <p className="mt-3 text-2xl font-semibold">{formatUptime(deviceMetrics.uptimeSeconds)}</p>
               <p className="mt-2 text-xs text-slate-500">
-                {deviceMetrics.uptimeSeconds === null ? "Menunggu telemetry" : `${deviceMetrics.uptimeSeconds.toLocaleString("id-ID")} detik sejak boot`}
+                {deviceMetrics.uptimeSeconds === null ? "Waiting for telemetry" : `${deviceMetrics.uptimeSeconds.toLocaleString("en-US")} seconds since boot`}
               </p>
             </article>
 
             <article className="rounded-2xl border border-slate-700/70 bg-slate-900/65 p-4 shadow-lg shadow-black/10 backdrop-blur-xl sm:p-5">
               <div className="flex items-center justify-between">
-                <span className="text-sm text-slate-400">Sinyal Wi-Fi</span>
+                <span className="text-sm text-slate-400">Wi-Fi signal</span>
                 <Signal size={18} className="text-emerald-300" />
               </div>
               <p className="mt-3 text-2xl font-semibold">
                 {deviceMetrics.wifiRssiDbm === null ? "--" : `${deviceMetrics.wifiRssiDbm} dBm`}
               </p>
-              <p className="mt-2 text-xs text-slate-500">Kekuatan koneksi ESP32 ke router</p>
+              <p className="mt-2 text-xs text-slate-500">ESP32 connection strength to the router</p>
             </article>
 
             <article className="rounded-2xl border border-slate-700/70 bg-slate-900/65 p-4 shadow-lg shadow-black/10 backdrop-blur-xl sm:p-5">
@@ -634,7 +634,7 @@ export default function DashboardPage() {
                 <HardDrive size={18} className="text-slate-300" />
               </div>
               <p className="mt-3 text-2xl font-semibold">{formatBytes(deviceMetrics.flashSizeBytes)}</p>
-              <p className="mt-2 text-xs text-slate-500">Kapasitas chip flash</p>
+              <p className="mt-2 text-xs text-slate-500">Flash chip capacity</p>
             </article>
           </div>
         </section>
@@ -647,11 +647,11 @@ export default function DashboardPage() {
               </div>
               <div>
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-cyan-300">Actuator control</p>
-                <h3 className="mt-1 text-xl font-semibold">Kontrol akses gerbang</h3>
+                <h3 className="mt-1 text-xl font-semibold">Gate access control</h3>
               </div>
             </div>
             <p className="mt-4 text-sm leading-6 text-slate-400">
-              Perintah dikirim ke perangkat terpilih melalui MQTT. Status pintu diperbarui saat sensor mengirim topik <code className="text-cyan-200">pintu</code>.
+              Commands are sent to the selected device over MQTT. Door status updates when the sensor publishes to the <code className="text-cyan-200">pintu</code> topic.
             </p>
             <div className="mt-5 grid gap-3 sm:mt-6 sm:grid-cols-2">
               <button
@@ -660,7 +660,7 @@ export default function DashboardPage() {
                 disabled={!isConnected || !selectedDevice?.topic_pub}
                 className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border border-amber-300/25 bg-amber-400/10 px-3 py-3 text-xs font-bold tracking-wide text-amber-100 transition hover:border-amber-200/50 hover:bg-amber-400/20 disabled:cursor-not-allowed disabled:opacity-40 sm:min-h-14 sm:px-5 sm:text-sm"
               >
-                <DoorOpen size={18} /> BUKA GARASI
+                <DoorOpen size={18} /> OPEN GARAGE
               </button>
               <button
                 type="button"
@@ -668,12 +668,12 @@ export default function DashboardPage() {
                 disabled={!isConnected || !selectedDevice?.topic_pub}
                 className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border border-emerald-300/25 bg-emerald-400/10 px-3 py-3 text-xs font-bold tracking-wide text-emerald-100 transition hover:border-emerald-200/50 hover:bg-emerald-400/20 disabled:cursor-not-allowed disabled:opacity-40 sm:min-h-14 sm:px-5 sm:text-sm"
               >
-                <DoorClosed size={18} /> TUTUP GARASI
+                <DoorClosed size={18} /> CLOSE GARAGE
               </button>
             </div>
             <div className="mt-4 flex flex-col gap-2 text-xs text-slate-500 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
               <span className="min-w-0 break-all">Publish topic: <code className="text-slate-300">{selectedDevice?.topic_pub || "—"}</code></span>
-              <span className="shrink-0">{lastCommand ? `Perintah terakhir: ${lastCommand}` : "Belum ada perintah dikirim"}</span>
+              <span className="shrink-0">{lastCommand ? `Last command: ${lastCommand}` : "No commands sent yet"}</span>
             </div>
           </article>
 
@@ -694,7 +694,7 @@ export default function DashboardPage() {
             </div>
             <div ref={terminalLogRef} className="h-56 space-y-2 overflow-y-auto p-3 font-mono text-[11px] sm:h-64 sm:p-5 sm:text-xs">
               {terminalEntries.length === 0 ? (
-                <p className="text-slate-600">// Menunggu pesan MQTT...</p>
+                <p className="text-slate-600">// Waiting for MQTT messages...</p>
               ) : (
                 terminalEntries.map((entry) => (
                   <div key={entry.id} className="grid grid-cols-[3.5rem_minmax(0,1fr)] gap-x-2 gap-y-1 leading-5 sm:grid-cols-[4.5rem_minmax(0,1fr)] sm:gap-x-3">

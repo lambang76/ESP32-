@@ -21,20 +21,20 @@ import { supabase } from "@/lib/supabaseClient";
 const features = [
   {
     icon: DoorClosed,
-    title: "Kontrol gerbang",
-    description: "Kirim perintah buka atau tutup ke perangkat garasi lewat MQTT.",
+    title: "Gate control",
+    description: "Send open or close commands to the garage device over MQTT.",
     accent: "cyan",
   },
   {
     icon: Fingerprint,
-    title: "Akses RFID",
-    description: "Pantau UID kartu terakhir yang terbaca oleh sistem akses.",
+    title: "RFID access",
+    description: "View the latest card UID read by the access system.",
     accent: "violet",
   },
   {
     icon: Gauge,
-    title: "Kesehatan ESP32",
-    description: "Lihat pemakaian heap, beban loop, uptime, dan kualitas Wi-Fi.",
+    title: "ESP32 health",
+    description: "Monitor heap usage, loop load, uptime, and Wi-Fi quality.",
     accent: "emerald",
   },
 ];
@@ -54,7 +54,7 @@ export default function HomePage() {
     const updateMember = (user: { email?: string | null; user_metadata?: Record<string, unknown> } | null) => {
       if (!active) return;
       const username = user?.user_metadata?.username;
-      setMember(user ? (typeof username === "string" && username ? username : user.email || "Anggota") : null);
+      setMember(user ? (typeof username === "string" && username ? username : user.email || "Member") : null);
       setAuthLoading(false);
     };
 
@@ -94,24 +94,24 @@ export default function HomePage() {
           </Link>
 
           <div className="hidden items-center gap-7 text-sm text-slate-400 md:flex">
-            <a href="#fitur" className="transition hover:text-white">Fitur</a>
-            <a href="#cara-kerja" className="transition hover:text-white">Cara kerja</a>
-            <Link href="/simulasi" className="transition hover:text-white">Simulasi</Link>
+            <a href="#fitur" className="transition hover:text-white">Features</a>
+            <a href="#cara-kerja" className="transition hover:text-white">How it works</a>
+            <Link href="/simulasi" className="transition hover:text-white">Simulation</Link>
             <Link href="/forum" className="transition hover:text-white">Forum</Link>
           </div>
 
           <div className="flex w-full items-center justify-between gap-1.5 sm:w-auto sm:justify-start sm:gap-2">
             <Link href="/simulasi" className="rounded-xl px-2 py-2 text-xs font-medium text-slate-300 transition hover:text-cyan-200 sm:px-3 sm:text-sm md:hidden">
-              Simulasi
+              Simulation
             </Link>
             <Link href="/forum" className="rounded-xl px-2 py-2 text-xs font-medium text-slate-300 transition hover:text-cyan-200 sm:px-3 sm:text-sm md:hidden">
               Forum
             </Link>
             <Link href="/panduan" className="rounded-xl px-2 py-2 text-xs font-medium text-cyan-200 transition hover:text-white sm:px-3 sm:text-sm">
-              Panduan
+              Guide
             </Link>
             {authLoading ? (
-              <span className="hidden px-3 py-2 text-xs text-slate-500 sm:inline">Memuat akun…</span>
+              <span className="hidden px-3 py-2 text-xs text-slate-500 sm:inline">Loading account…</span>
             ) : member ? (
               <>
                 <span title={member} className="inline-flex max-w-28 items-center gap-1.5 truncate rounded-xl border border-emerald-300/15 bg-emerald-300/[0.06] px-2.5 py-2 text-xs text-emerald-100 sm:max-w-44 sm:px-3 sm:text-sm">
@@ -122,16 +122,16 @@ export default function HomePage() {
                   Dashboard
                 </Link>
                 <button type="button" onClick={handleLogout} disabled={loggingOut} className="inline-flex items-center gap-1.5 rounded-xl border border-slate-700 px-2.5 py-2 text-xs font-medium text-slate-300 transition hover:border-rose-400/40 hover:text-rose-200 disabled:opacity-50 sm:px-3 sm:text-sm">
-                  <LogOut size={15} /> <span className="hidden sm:inline">{loggingOut ? "Keluar…" : "Keluar"}</span>
+                  <LogOut size={15} /> <span className="hidden sm:inline">{loggingOut ? "Signing out…" : "Sign out"}</span>
                 </button>
               </>
             ) : (
               <>
                 <Link href="/login" className="hidden rounded-xl px-3 py-2 text-sm font-medium text-slate-300 transition hover:text-white sm:inline-flex sm:px-4">
-                  Masuk
+                  Sign in
                 </Link>
                 <Link href="/signup" className="inline-flex items-center gap-2 rounded-xl bg-cyan-400 px-3 py-2 text-sm font-bold text-slate-950 transition hover:bg-cyan-300 sm:px-4">
-                  Daftar <ArrowUpRight size={15} />
+                  Sign up <ArrowUpRight size={15} />
                 </Link>
               </>
             )}
@@ -146,31 +146,31 @@ export default function HomePage() {
               <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-cyan-300 opacity-50" />
               <span className="relative inline-flex h-2 w-2 rounded-full bg-cyan-300" />
             </span>
-            SISTEM AKSES PINTAR · ESP32 + MQTT
+            SMART ACCESS SYSTEM · ESP32 + MQTT
           </div>
 
           <h1 className="max-w-2xl text-4xl font-semibold leading-[1.08] tracking-tight sm:text-5xl lg:text-6xl">
-            Garasi aman.<br />
+            A secure garage.<br />
             <span className="bg-gradient-to-r from-cyan-200 via-sky-300 to-violet-300 bg-clip-text text-transparent">
-              Akses dalam kendali.
+              Access under control.
             </span>
           </h1>
           <p className="mt-6 max-w-xl text-base leading-7 text-slate-400 sm:text-lg sm:leading-8">
-            Satu panel untuk memantau gerbang, akses RFID, dan kondisi perangkat ESP32—dari ponsel maupun komputer.
+            One panel to monitor the gate, RFID access, and ESP32 device health—from your phone or computer.
           </p>
 
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">
             <Link href="/login" className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-cyan-400 px-6 py-3 text-sm font-bold text-slate-950 shadow-xl shadow-cyan-950/30 transition hover:-translate-y-0.5 hover:bg-cyan-300">
-              Buka dashboard <ArrowRight size={17} />
+              Open dashboard <ArrowRight size={17} />
             </Link>
             <a href="#fitur" className="inline-flex min-h-12 items-center justify-center rounded-xl border border-slate-700 bg-slate-900/50 px-6 py-3 text-sm font-semibold text-slate-200 transition hover:border-slate-500 hover:bg-slate-800/70">
-              Kenali fiturnya
+              Explore features
             </a>
           </div>
 
           <div className="mt-9 flex flex-wrap gap-x-6 gap-y-3 text-xs text-slate-500 sm:text-sm">
-            <span className="inline-flex items-center gap-2"><ShieldCheck size={16} className="text-emerald-300" /> Login anggota</span>
-            <span className="inline-flex items-center gap-2"><Wifi size={16} className="text-cyan-300" /> Monitoring real-time</span>
+            <span className="inline-flex items-center gap-2"><ShieldCheck size={16} className="text-emerald-300" /> Member sign-in</span>
+            <span className="inline-flex items-center gap-2"><Wifi size={16} className="text-cyan-300" /> Real-time monitoring</span>
           </div>
         </div>
 
@@ -190,22 +190,22 @@ export default function HomePage() {
 
             <div className="mt-4 grid grid-cols-2 gap-3">
               <div className="rounded-2xl border border-emerald-300/15 bg-gradient-to-br from-emerald-400/10 to-slate-950/30 p-4 sm:p-5">
-                <div className="flex items-center justify-between text-emerald-200"><span className="text-xs text-slate-400">STATUS PINTU</span><DoorClosed size={19} /></div>
-                <p className="mt-5 text-xl font-bold tracking-wide sm:text-2xl">TERTUTUP</p>
-                <p className="mt-1 text-xs text-slate-500">Tampilan mengikuti telemetry</p>
+                <div className="flex items-center justify-between text-emerald-200"><span className="text-xs text-slate-400">DOOR STATUS</span><DoorClosed size={19} /></div>
+                <p className="mt-5 text-xl font-bold tracking-wide sm:text-2xl">CLOSED</p>
+                <p className="mt-1 text-xs text-slate-500">Updates with telemetry</p>
               </div>
               <div className="rounded-2xl border border-violet-300/15 bg-gradient-to-br from-violet-400/10 to-slate-950/30 p-4 sm:p-5">
-                <div className="flex items-center justify-between text-violet-200"><span className="text-xs text-slate-400">AKSES TERAKHIR</span><Fingerprint size={19} /></div>
+                <div className="flex items-center justify-between text-violet-200"><span className="text-xs text-slate-400">LATEST ACCESS</span><Fingerprint size={19} /></div>
                 <p className="mt-5 truncate text-lg font-semibold sm:text-xl">RFID member</p>
-                <p className="mt-1 text-xs text-slate-500">Pencatatan akses masuk</p>
+                <p className="mt-1 text-xs text-slate-500">Entry access log</p>
               </div>
             </div>
 
             <div className="mt-3 rounded-2xl border border-cyan-300/15 bg-gradient-to-r from-cyan-400/[0.08] via-slate-950/30 to-slate-950/30 p-4 sm:p-5">
               <div className="flex items-center justify-between gap-4">
                 <div>
-                  <p className="text-xs text-slate-400">MONITORING ESP32</p>
-                  <p className="mt-1 text-sm font-semibold">Sensor, resource, dan koneksi</p>
+                  <p className="text-xs text-slate-400">ESP32 MONITORING</p>
+                  <p className="mt-1 text-sm font-semibold">Sensors, resources, and connectivity</p>
                 </div>
                 <div className="flex -space-x-2">
                   <span className="grid h-9 w-9 place-items-center rounded-full border-2 border-slate-900 bg-cyan-300/15 text-cyan-200"><Gauge size={15} /></span>
@@ -217,7 +217,7 @@ export default function HomePage() {
 
             <div className="mt-4 flex items-center justify-between rounded-xl bg-black/20 px-4 py-3 text-xs text-slate-500">
               <span>ESP32 · MQTT · Supabase</span>
-              <span className="inline-flex items-center gap-1 text-cyan-200">Lihat panel <ArrowRight size={13} /></span>
+              <span className="inline-flex items-center gap-1 text-cyan-200">View dashboard <ArrowRight size={13} /></span>
             </div>
           </div>
           <div className="absolute -bottom-5 -left-4 hidden items-center gap-3 rounded-2xl border border-white/10 bg-slate-900/90 px-4 py-3 shadow-xl backdrop-blur-xl sm:flex">
@@ -231,10 +231,10 @@ export default function HomePage() {
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="mb-9 flex flex-col gap-3 sm:mb-11 sm:flex-row sm:items-end sm:justify-between">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-cyan-300">SEMUA DALAM SATU PANEL</p>
-              <h2 className="mt-2 text-2xl font-semibold tracking-tight sm:text-3xl">Kontrol yang jelas, pantauan yang lengkap.</h2>
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-cyan-300">ALL IN ONE PANEL</p>
+              <h2 className="mt-2 text-2xl font-semibold tracking-tight sm:text-3xl">Clear controls, complete monitoring.</h2>
             </div>
-            <p className="max-w-md text-sm leading-6 text-slate-500">Dirancang untuk membantu anggota tim memantau akses dan kondisi perangkat secara langsung.</p>
+            <p className="max-w-md text-sm leading-6 text-slate-500">Designed to help team members monitor access and device health in real time.</p>
           </div>
 
           <div className="grid gap-4 md:grid-cols-3">
@@ -245,7 +245,7 @@ export default function HomePage() {
                 </div>
                 <h3 className="text-lg font-semibold">{title}</h3>
                 <p className="mt-2 text-sm leading-6 text-slate-400">{description}</p>
-                <span className="mt-5 inline-flex items-center gap-1 text-xs font-medium text-slate-500 transition group-hover:text-cyan-200">Bagian dari panel <ArrowRight size={13} /></span>
+                <span className="mt-5 inline-flex items-center gap-1 text-xs font-medium text-slate-500 transition group-hover:text-cyan-200">Part of the dashboard <ArrowRight size={13} /></span>
               </article>
             ))}
           </div>
@@ -255,17 +255,17 @@ export default function HomePage() {
       <section id="cara-kerja" className="relative mx-auto max-w-7xl px-4 py-16 sm:px-6 sm:py-20 lg:px-8">
         <div className="grid gap-10 lg:grid-cols-[0.8fr_1.2fr] lg:items-center">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-cyan-300">ALUR SISTEM</p>
-            <h2 className="mt-2 text-2xl font-semibold tracking-tight sm:text-3xl">Dari perangkat ke dashboard, secara langsung.</h2>
-            <p className="mt-4 text-sm leading-7 text-slate-400">ESP32 mengirim pembacaan sensor ke broker MQTT. Dashboard menerima telemetry, menampilkan status, dan mengirim kontrol gerbang ke perangkat yang dipilih.</p>
-            <Link href="/signup" className="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-cyan-300 transition hover:text-cyan-200">Mulai gunakan panel <ArrowRight size={16} /></Link>
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-cyan-300">SYSTEM FLOW</p>
+            <h2 className="mt-2 text-2xl font-semibold tracking-tight sm:text-3xl">From device to dashboard, in real time.</h2>
+            <p className="mt-4 text-sm leading-7 text-slate-400">The ESP32 sends sensor readings to the MQTT broker. The dashboard receives telemetry, displays status, and sends gate commands to the selected device.</p>
+            <Link href="/signup" className="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-cyan-300 transition hover:text-cyan-200">Get started <ArrowRight size={16} /></Link>
           </div>
 
           <div className="grid gap-3 sm:grid-cols-3">
             {[
-              ["01", "ESP32", "Sensor dan aktuator"],
-              ["02", "MQTT", "Pesan dua arah"],
-              ["03", "Dashboard", "Pantau dan kendalikan"],
+              ["01", "ESP32", "Sensors and actuators"],
+              ["02", "MQTT", "Two-way messaging"],
+              ["03", "Dashboard", "Monitor and control"],
             ].map(([number, title, description]) => (
               <article key={number} className="rounded-2xl border border-slate-800 bg-slate-900/50 p-5">
                 <p className="font-mono text-xs text-cyan-300">/{number}</p>

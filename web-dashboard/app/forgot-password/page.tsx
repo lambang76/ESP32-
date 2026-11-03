@@ -18,7 +18,7 @@ export default function ForgotPasswordPage() {
     setNotice(null);
 
     if (!supabase) {
-      setError("Konfigurasi Supabase belum tersedia.");
+      setError("Supabase is not configured.");
       return;
     }
 
@@ -30,15 +30,15 @@ export default function ForgotPasswordPage() {
     if (resetError) {
       setError(resetError.message);
     } else {
-      setNotice("Jika email terdaftar, tautan pemulihan password akan segera dikirim.");
+      setNotice("If the email address is registered, a password recovery link will be sent shortly.");
     }
     setLoading(false);
   }
 
   return (
     <AuthShell
-      title="Lupa password?"
-      description="Masukkan email akunmu. Kami akan mengirim tautan untuk membuat password baru."
+      title="Forgot your password?"
+      description="Enter your account email. We will send a link to create a new password."
       icon={Mail}
     >
       <form onSubmit={handleSubmit} className="space-y-5">
@@ -51,7 +51,7 @@ export default function ForgotPasswordPage() {
             required
             value={email}
             onChange={(event) => setEmail(event.target.value)}
-            placeholder="nama@kampus.ac.id"
+            placeholder="name@example.com"
             className="w-full rounded-xl border border-slate-700 bg-slate-950/70 px-4 py-3 text-sm text-white outline-none transition placeholder:text-slate-600 focus:border-cyan-400/70 focus:ring-2 focus:ring-cyan-400/10"
           />
         </div>
@@ -64,12 +64,12 @@ export default function ForgotPasswordPage() {
           disabled={loading || !supabase}
           className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-cyan-400 px-5 py-3.5 text-sm font-bold text-slate-950 shadow-lg shadow-cyan-950/30 transition hover:bg-cyan-300 disabled:cursor-not-allowed disabled:opacity-50"
         >
-          {loading ? "Mengirim tautan..." : "Kirim tautan reset"}
+          {loading ? "Sending link..." : "Send reset link"}
         </button>
       </form>
 
       <Link href="/login" className="mt-6 inline-flex items-center gap-2 text-sm font-medium text-cyan-300 transition hover:text-cyan-200">
-        <ArrowLeft size={16} /> Kembali ke login
+        <ArrowLeft size={16} /> Back to sign in
       </Link>
     </AuthShell>
   );

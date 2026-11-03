@@ -17,7 +17,7 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (!supabase) {
-      setError("Konfigurasi Supabase belum tersedia.");
+      setError("Supabase is not configured.");
       setCheckingSession(false);
       return;
     }
@@ -37,7 +37,7 @@ export default function LoginPage() {
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!supabase) {
-      setError("Konfigurasi Supabase belum tersedia.");
+      setError("Supabase is not configured.");
       return;
     }
 
@@ -58,19 +58,19 @@ export default function LoginPage() {
           body: JSON.stringify({ username: identifier.trim(), password }),
         });
         const result = await response.json();
-        if (!response.ok) throw new Error(result.error || "Username atau password tidak valid.");
+        if (!response.ok) throw new Error(result.error || "Invalid username or password.");
         const { error } = await supabase.auth.setSession({
           access_token: result.access_token,
           refresh_token: result.refresh_token,
         });
         signInError = error;
       } catch (requestError) {
-        signInError = requestError instanceof Error ? requestError : new Error("Login gagal.");
+        signInError = requestError instanceof Error ? requestError : new Error("Sign-in failed.");
       }
     }
 
     if (signInError) {
-      setError(signInError.message || "Email/username atau password tidak valid.");
+      setError(signInError.message || "Invalid email, username, or password.");
       setLoading(false);
       return;
     }
@@ -81,13 +81,13 @@ export default function LoginPage() {
 
   return (
     <AuthShell
-      title="Masuk ke dashboard"
-      description="Gunakan akun anggota JTD untuk mengakses panel garasi."
+      title="Sign in to the dashboard"
+      description="Use your JTD member account to access the garage panel."
       icon={LockKeyhole}
     >
       <form onSubmit={handleSubmit} className="space-y-5">
         <div>
-          <label htmlFor="identifier" className="mb-2 block text-sm font-medium text-slate-300">Email atau username</label>
+          <label htmlFor="identifier" className="mb-2 block text-sm font-medium text-slate-300">Email or username</label>
           <input
             id="identifier"
             type="text"
@@ -95,7 +95,7 @@ export default function LoginPage() {
             required
             value={identifier}
             onChange={(event) => setIdentifier(event.target.value)}
-            placeholder="nama@kampus.ac.id atau username"
+            placeholder="name@example.com or username"
             className="w-full rounded-xl border border-slate-700 bg-slate-950/70 px-4 py-3 text-sm text-white outline-none transition placeholder:text-slate-600 focus:border-cyan-400/70 focus:ring-2 focus:ring-cyan-400/10"
           />
         </div>
@@ -104,7 +104,7 @@ export default function LoginPage() {
           <div className="mb-2 flex items-center justify-between gap-3">
             <label htmlFor="password" className="block text-sm font-medium text-slate-300">Password</label>
             <Link href="/forgot-password" className="text-xs text-cyan-300 transition hover:text-cyan-200">
-              Lupa password?
+              Forgot password?
             </Link>
           </div>
           <input
@@ -114,7 +114,7 @@ export default function LoginPage() {
             required
             value={password}
             onChange={(event) => setPassword(event.target.value)}
-            placeholder="Masukkan password"
+            placeholder="Enter your password"
             className="w-full rounded-xl border border-slate-700 bg-slate-950/70 px-4 py-3 text-sm text-white outline-none transition placeholder:text-slate-600 focus:border-cyan-400/70 focus:ring-2 focus:ring-cyan-400/10"
           />
         </div>
@@ -126,13 +126,13 @@ export default function LoginPage() {
           disabled={loading || checkingSession || !supabase}
           className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-cyan-400 px-5 py-3.5 text-sm font-bold text-slate-950 shadow-lg shadow-cyan-950/30 transition hover:bg-cyan-300 disabled:cursor-not-allowed disabled:opacity-50"
         >
-          {loading ? "Memeriksa akun..." : "Masuk"}
+          {loading ? "Checking account..." : "Sign in"}
           {!loading && <ArrowRight size={17} />}
         </button>
       </form>
 
       <p className="mt-6 text-center text-sm text-slate-400">
-        Belum punya akun? <Link href="/signup" className="font-semibold text-cyan-300 hover:text-cyan-200">Daftar</Link>
+        New here? <Link href="/signup" className="font-semibold text-cyan-300 hover:text-cyan-200">Sign up</Link>
       </p>
     </AuthShell>
   );

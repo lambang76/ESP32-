@@ -10,7 +10,7 @@ export async function POST(request: Request) {
 
   if (!supabaseUrl || !anonKey || !serviceRoleKey) {
     return NextResponse.json(
-      { error: "Login dengan username belum dikonfigurasi. Silakan login dengan email atau hubungi admin." },
+      { error: "Username sign-in is not configured. Please sign in with your email or contact an administrator." },
       { status: 503, headers: { "Cache-Control": "no-store" } },
     );
   }
@@ -19,13 +19,13 @@ export async function POST(request: Request) {
   try {
     body = await request.json();
   } catch {
-    return NextResponse.json({ error: "Permintaan login tidak valid." }, { status: 400, headers: { "Cache-Control": "no-store" } });
+    return NextResponse.json({ error: "Invalid sign-in request." }, { status: 400, headers: { "Cache-Control": "no-store" } });
   }
 
   const username = typeof body.username === "string" ? body.username.trim().toLowerCase() : "";
   const password = typeof body.password === "string" ? body.password : "";
   if (!/^[a-z0-9_]{3,24}$/.test(username) || !password) {
-    return NextResponse.json({ error: "Username atau password tidak valid." }, { status: 400, headers: { "Cache-Control": "no-store" } });
+    return NextResponse.json({ error: "Invalid username or password." }, { status: 400, headers: { "Cache-Control": "no-store" } });
   }
 
   const admin = createClient(supabaseUrl, serviceRoleKey, {
@@ -38,13 +38,13 @@ export async function POST(request: Request) {
     .maybeSingle();
 
   if (profileError || !profile) {
-    return NextResponse.json({ error: "Username atau password tidak valid." }, { status: 401, headers: { "Cache-Control": "no-store" } });
+    return NextResponse.json({ error: "Invalid username or password." }, { status: 401, headers: { "Cache-Control": "no-store" } });
   }
 
   const { data: userData, error: userError } = await admin.auth.admin.getUserById(profile.id);
   const email = userData.user?.email;
   if (userError || !email) {
-    return NextResponse.json({ error: "Username atau password tidak valid." }, { status: 401, headers: { "Cache-Control": "no-store" } });
+    return NextResponse.json({ error: "Invalid username or password." }, { status: 401, headers: { "Cache-Control": "no-store" } });
   }
 
   const auth = createClient(supabaseUrl, anonKey, {
@@ -52,7 +52,7 @@ export async function POST(request: Request) {
   });
   const { data, error } = await auth.auth.signInWithPassword({ email, password });
   if (error || !data.session) {
-    return NextResponse.json({ error: "Username atau password tidak valid." }, { status: 401, headers: { "Cache-Control": "no-store" } });
+    return NextResponse.json({ error: "Invalid username or password." }, { status: 401, headers: { "Cache-Control": "no-store" } });
   }
 
   return NextResponse.json({
