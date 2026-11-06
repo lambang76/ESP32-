@@ -100,83 +100,110 @@ export default function ProposalGuidePage() {
 
         <section id="topology" className="mt-10 scroll-mt-6 rounded-3xl border border-cyan-300/20 bg-slate-900/70 p-4 sm:p-7">
           <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-end">
-            <div><p className="text-xs font-bold uppercase tracking-[0.2em] text-cyan-300">Main design focus · two routers</p><h2 className="mt-2 text-2xl font-semibold sm:text-3xl">Smart Garage network topology</h2><p className="mt-2 max-w-3xl text-sm leading-6 text-slate-400">The ESP32 and user devices sit on separate networks. R1 routes across the point-to-point link to R2; the local socket server relays telemetry and commands between the ESP32 and controller.</p></div>
-            <span className="w-fit rounded-full border border-emerald-300/20 bg-emerald-300/10 px-3 py-1.5 text-xs font-semibold text-emerald-200">Local lab path · no internet required</span>
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.2em] text-cyan-300">Network architecture: cloud + local backup</p>
+              <h2 className="mt-2 text-2xl font-semibold sm:text-3xl">Smart Garage network topology</h2>
+              <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-400">This topology has two distinct routes: normal cloud access through Vercel and EMQX, plus a local monitoring route through the laptop server when cloud services are unavailable.</p>
+            </div>
+            <span className="w-fit rounded-full border border-emerald-300/20 bg-emerald-300/10 px-3 py-1.5 text-xs font-semibold text-emerald-200">Cloud route + local fallback</span>
           </div>
 
           <div className="mt-5 overflow-x-auto rounded-2xl border border-slate-200 bg-[#f7fafc] p-2 sm:p-4">
-            <p className="px-2 pb-2 text-[11px] font-medium text-slate-500 sm:hidden">Swipe horizontally to view the complete topology →</p>
-            <svg viewBox="0 0 1000 510" role="img" aria-labelledby="garage-topology-title garage-topology-desc" className="mx-auto block min-w-[850px] w-full max-w-[1180px] text-slate-800">
-              <title id="garage-topology-title">Smart Garage two-router network topology</title>
-              <desc id="garage-topology-desc">ESP32 on Network A connects through Router R1 and a point-to-point link to Router R2. A socket server and the user dashboard are on the application network. Telemetry travels toward the server and control commands return to the ESP32.</desc>
+            <p className="px-2 pb-2 text-[11px] font-medium text-slate-500 sm:hidden">Swipe horizontally to view the complete topology &gt;&gt;</p>
+            <svg viewBox="0 0 1200 700" role="img" aria-labelledby="garage-topology-title garage-topology-desc" className="mx-auto block min-w-[960px] w-full max-w-[1220px] text-slate-800">
+              <title id="garage-topology-title">Smart Garage cloud and two-router local backup topology</title>
+              <desc id="garage-topology-desc">Vercel and EMQX are cloud services. Router A connects the ESP32, RFID reader, servo, and a laptop local WebSocket server/database. Router A and Router B are joined by a local routed link. A phone or laptop client on Router B can access the local server if cloud services are down.</desc>
               <defs>
-                <marker id="topology-data-arrow" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#0891b2" /></marker>
-                <marker id="topology-command-arrow" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#7c3aed" /></marker>
-                <marker id="topology-link-arrow" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#64748b" /></marker>
+                <marker id="topo-cloud-arrow" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#64748b" /></marker>
+                <marker id="topo-local-arrow" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#0891b2" /></marker>
+                <marker id="topo-device-arrow" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 z" fill="#64748b" /></marker>
               </defs>
 
-              <rect x="20" y="178" width="365" height="205" rx="18" fill="#fff9e8" stroke="#fbbf24" strokeWidth="2" strokeDasharray="8 6" />
-              <text x="40" y="205" fontSize="14" fontWeight="800" fill="#92400e">NETWORK A · DEVICE SIDE</text>
-              <text x="40" y="225" fontSize="12" fill="#78716c">192.168.10.0/24 · static addresses</text>
+              <rect x="22" y="18" width="1156" height="178" rx="20" fill="#eff8ff" stroke="#7dd3fc" strokeWidth="2" strokeDasharray="8 6" />
+              <text x="48" y="47" fontSize="13" fontWeight="800" letterSpacing="1.5" fill="#0369a1">INTERNET / CLOUD SERVICES</text>
+              <rect x="95" y="78" width="220" height="78" rx="13" fill="white" stroke="#93c5fd" strokeWidth="1.5" />
+              <text x="205" y="108" textAnchor="middle" fontSize="15" fontWeight="800" fill="#1e3a8a">VERCEL DEPLOY</text>
+              <text x="205" y="132" textAnchor="middle" fontSize="12" fill="#64748b">Hosts the web dashboard</text>
+              <path d="M315 117 H435" fill="none" stroke="#64748b" strokeWidth="2" markerEnd="url(#topo-cloud-arrow)" />
+              <path d="M435 132 H315" fill="none" stroke="#94a3b8" strokeWidth="1.5" markerEnd="url(#topo-device-arrow)" />
+              <rect x="445" y="72" width="300" height="90" rx="42" fill="white" stroke="#cbd5e1" strokeWidth="1.5" />
+              <text x="595" y="108" textAnchor="middle" fontSize="17" fontWeight="800" fill="#334155">INTERNET / WAN</text>
+              <text x="595" y="132" textAnchor="middle" fontSize="12" fill="#64748b">Public network access</text>
+              <path d="M745 117 H865" fill="none" stroke="#64748b" strokeWidth="2" markerEnd="url(#topo-cloud-arrow)" />
+              <path d="M865 132 H745" fill="none" stroke="#94a3b8" strokeWidth="1.5" markerEnd="url(#topo-device-arrow)" />
+              <rect x="875" y="78" width="220" height="78" rx="13" fill="white" stroke="#93c5fd" strokeWidth="1.5" />
+              <text x="985" y="108" textAnchor="middle" fontSize="15" fontWeight="800" fill="#1e3a8a">EMQX CLOUD</text>
+              <text x="985" y="132" textAnchor="middle" fontSize="12" fill="#64748b">MQTT broker | TLS / WSS</text>
 
-              <rect x="595" y="178" width="385" height="205" rx="18" fill="#ecfdf5" stroke="#2dd4bf" strokeWidth="2" strokeDasharray="8 6" />
-              <text x="615" y="205" fontSize="14" fontWeight="800" fill="#115e59">NETWORK C · SERVER / USER SIDE</text>
-              <text x="615" y="225" fontSize="12" fill="#64748b">172.168.10.0/24 · static addresses*</text>
+              <rect x="22" y="225" width="465" height="430" rx="20" fill="#fff9e8" stroke="#fbbf24" strokeWidth="2" strokeDasharray="8 6" />
+              <text x="48" y="258" fontSize="13" fontWeight="800" letterSpacing="1.5" fill="#92400e">GARAGE LAN - ROUTER A</text>
+              <text x="48" y="280" fontSize="12" fill="#78716c">Network A | 192.168.10.0/24</text>
+              <rect x="713" y="225" width="465" height="430" rx="20" fill="#ecfdf5" stroke="#2dd4bf" strokeWidth="2" strokeDasharray="8 6" />
+              <text x="739" y="258" fontSize="13" fontWeight="800" letterSpacing="1.5" fill="#115e59">USER LAN - ROUTER B</text>
+              <text x="739" y="280" fontSize="12" fill="#64748b">Network C | 172.168.10.0/24*</text>
 
-              <text x="500" y="202" textAnchor="middle" fontSize="12" fontWeight="800" fill="#475569">NETWORK B</text>
-              <text x="500" y="220" textAnchor="middle" fontSize="11" fill="#64748b">10.10.10.0/31</text>
+              <path d="M595 162 V205 H430 V344 H285 V354" fill="none" stroke="#94a3b8" strokeWidth="2" strokeDasharray="5 5" markerEnd="url(#topo-cloud-arrow)" />
+              <path d="M595 162 V205 H1100 V330 H785 V354" fill="none" stroke="#94a3b8" strokeWidth="2" strokeDasharray="5 5" markerEnd="url(#topo-cloud-arrow)" />
+              <text x="297" y="330" fontSize="11" fontWeight="700" fill="#64748b">WAN</text>
+              <text x="1090" y="320" fontSize="11" fontWeight="700" fill="#64748b">WAN</text>
 
-              <path d="M112 144 V128 H870 V210" fill="none" stroke="#0891b2" strokeWidth="3" strokeDasharray="9 7" markerEnd="url(#topology-data-arrow)" />
-              <text x="490" y="116" textAnchor="middle" fontSize="13" fontWeight="800" fill="#0e7490">TELEMETRY · ESP32 → R1 → R2 → SOCKET SERVER → DASHBOARD</text>
-              <path d="M870 396 V438 H112 V364" fill="none" stroke="#7c3aed" strokeWidth="3" strokeDasharray="9 7" markerEnd="url(#topology-command-arrow)" />
-              <text x="490" y="462" textAnchor="middle" fontSize="13" fontWeight="800" fill="#6d28d9">CONTROL · DASHBOARD → SOCKET SERVER → R2 → R1 → ESP32</text>
+              <rect x="48" y="354" width="130" height="94" rx="13" fill="white" stroke="#cbd5e1" strokeWidth="1.5" />
+              <text x="113" y="383" textAnchor="middle" fontSize="15" fontWeight="800" fill="#0f172a">ESP32</text>
+              <text x="113" y="404" textAnchor="middle" fontSize="12" fill="#475569">192.168.10.10</text>
+              <text x="113" y="426" textAnchor="middle" fontSize="11" fill="#64748b">Wi-Fi device</text>
+              <rect x="48" y="300" width="130" height="42" rx="10" fill="white" stroke="#cbd5e1" strokeWidth="1.5" />
+              <text x="113" y="326" textAnchor="middle" fontSize="13" fontWeight="700" fill="#334155">RFID RC522</text>
+              <path d="M113 342 V351" stroke="#64748b" strokeWidth="1.8" markerEnd="url(#topo-device-arrow)" />
+              <rect x="48" y="462" width="130" height="42" rx="10" fill="white" stroke="#cbd5e1" strokeWidth="1.5" />
+              <text x="113" y="488" textAnchor="middle" fontSize="13" fontWeight="700" fill="#334155">SERVO GATE</text>
+              <path d="M113 449 V459" stroke="#64748b" strokeWidth="1.8" markerEnd="url(#topo-device-arrow)" />
 
-              <rect x="40" y="250" width="145" height="114" rx="13" fill="white" stroke="#cbd5e1" strokeWidth="1.5" />
-              <text x="112" y="277" textAnchor="middle" fontSize="15" fontWeight="800" fill="#0f172a">ESP32 GARAGE</text>
-              <text x="112" y="299" textAnchor="middle" fontSize="12" fill="#475569">192.168.10.10</text>
-              <text x="112" y="319" textAnchor="middle" fontSize="11" fill="#64748b">RFID · reed switch</text>
-              <text x="112" y="338" textAnchor="middle" fontSize="11" fill="#64748b">servo · Wi-Fi client</text>
+              <rect x="220" y="354" width="130" height="94" rx="13" fill="white" stroke="#cbd5e1" strokeWidth="1.5" />
+              <text x="285" y="383" textAnchor="middle" fontSize="15" fontWeight="800" fill="#0f172a">ROUTER A</text>
+              <text x="285" y="404" textAnchor="middle" fontSize="11" fill="#475569">192.168.10.1/24</text>
+              <text x="285" y="426" textAnchor="middle" fontSize="11" fill="#64748b">Wi-Fi | routing</text>
+              <rect x="365" y="354" width="105" height="132" rx="13" fill="white" stroke="#67e8f9" strokeWidth="2" />
+              <text x="417" y="382" textAnchor="middle" fontSize="13" fontWeight="800" fill="#155e75">LAPTOP</text>
+              <text x="417" y="403" textAnchor="middle" fontSize="11" fill="#475569">Local server</text>
+              <text x="417" y="422" textAnchor="middle" fontSize="10" fill="#64748b">WebSocket</text>
+              <text x="417" y="440" textAnchor="middle" fontSize="10" fill="#64748b">Database</text>
+              <text x="417" y="463" textAnchor="middle" fontSize="10" fill="#475569">192.168.10.20</text>
 
-              <rect x="225" y="250" width="140" height="114" rx="13" fill="white" stroke="#cbd5e1" strokeWidth="1.5" />
-              <text x="295" y="278" textAnchor="middle" fontSize="15" fontWeight="800" fill="#0f172a">ROUTER R1</text>
-              <text x="295" y="300" textAnchor="middle" fontSize="12" fill="#475569">LAN .10.1/24</text>
-              <text x="295" y="320" textAnchor="middle" fontSize="11" fill="#64748b">P2P .0/31</text>
-              <text x="295" y="340" textAnchor="middle" fontSize="11" fill="#64748b">static route to C</text>
+              <rect x="720" y="354" width="130" height="94" rx="13" fill="white" stroke="#cbd5e1" strokeWidth="1.5" />
+              <text x="785" y="383" textAnchor="middle" fontSize="15" fontWeight="800" fill="#0f172a">ROUTER B</text>
+              <text x="785" y="404" textAnchor="middle" fontSize="10" fill="#475569">172.168.10.1/24*</text>
+              <text x="785" y="426" textAnchor="middle" fontSize="11" fill="#64748b">Wi-Fi | routing</text>
+              <rect x="947" y="354" width="190" height="94" rx="13" fill="white" stroke="#cbd5e1" strokeWidth="1.5" />
+              <text x="1042" y="383" textAnchor="middle" fontSize="15" fontWeight="800" fill="#0f172a">MONITORING CLIENT</text>
+              <text x="1042" y="405" textAnchor="middle" fontSize="12" fill="#475569">Phone / laptop</text>
+              <text x="1042" y="427" textAnchor="middle" fontSize="11" fill="#64748b">172.168.10.30</text>
 
-              <rect x="595" y="250" width="140" height="114" rx="13" fill="white" stroke="#cbd5e1" strokeWidth="1.5" />
-              <text x="665" y="278" textAnchor="middle" fontSize="15" fontWeight="800" fill="#0f172a">ROUTER R2</text>
-              <text x="665" y="300" textAnchor="middle" fontSize="12" fill="#475569">LAN .10.1/24*</text>
-              <text x="665" y="320" textAnchor="middle" fontSize="11" fill="#64748b">P2P .1/31</text>
-              <text x="665" y="340" textAnchor="middle" fontSize="11" fill="#64748b">static route to A</text>
-
-              <rect x="775" y="238" width="180" height="66" rx="12" fill="#ecfeff" stroke="#67e8f9" strokeWidth="1.5" />
-              <text x="865" y="262" textAnchor="middle" fontSize="14" fontWeight="800" fill="#155e75">LOCAL SOCKET SERVER</text>
-              <text x="865" y="283" textAnchor="middle" fontSize="11" fill="#475569">172.168.10.20 · TCP/JSON</text>
-
-              <rect x="775" y="319" width="180" height="48" rx="12" fill="white" stroke="#cbd5e1" strokeWidth="1.5" />
-              <text x="865" y="340" textAnchor="middle" fontSize="13" fontWeight="800" fill="#0f172a">WEB CONTROLLER</text>
-              <text x="865" y="357" textAnchor="middle" fontSize="11" fill="#64748b">172.168.10.30 · WebSocket</text>
-
-              <path d="M185 300 H220" stroke="#64748b" strokeWidth="2" markerEnd="url(#topology-link-arrow)" />
-              <text x="202" y="289" textAnchor="middle" fontSize="9" fill="#64748b">Wi-Fi</text>
-              <path d="M365 300 H590" stroke="#64748b" strokeWidth="2" markerEnd="url(#topology-link-arrow)" />
-              <path d="M590 313 H365" stroke="#94a3b8" strokeWidth="1.5" markerEnd="url(#topology-link-arrow)" />
-              <text x="477" y="286" textAnchor="middle" fontSize="10" fill="#475569">point-to-point Ethernet</text>
-              <path d="M735 278 H770" stroke="#64748b" strokeWidth="2" markerEnd="url(#topology-link-arrow)" />
-              <path d="M865 305 V315" stroke="#64748b" strokeWidth="2" markerEnd="url(#topology-link-arrow)" />
-
-              <circle className="topology-packet" r="6" fill="#06b6d4"><animateMotion dur="5s" repeatCount="indefinite" path="M112 144 V128 H870 V210" /></circle>
-              <circle className="topology-packet" r="6" fill="#8b5cf6"><animateMotion dur="5s" repeatCount="indefinite" path="M870 396 V438 H112 V364" /></circle>
+              <path d="M178 390 H215" fill="none" stroke="#64748b" strokeWidth="2" markerEnd="url(#topo-device-arrow)" />
+              <path d="M215 402 H178" fill="none" stroke="#94a3b8" strokeWidth="1.5" markerEnd="url(#topo-device-arrow)" />
+              <text x="197" y="380" textAnchor="middle" fontSize="10" fill="#64748b">Wi-Fi</text>
+              <path d="M350 390 H360" fill="none" stroke="#64748b" strokeWidth="2" markerEnd="url(#topo-device-arrow)" />
+              <path d="M360 402 H350" fill="none" stroke="#94a3b8" strokeWidth="1.5" markerEnd="url(#topo-device-arrow)" />
+              <text x="355" y="378" textAnchor="middle" fontSize="9" fill="#64748b">LAN</text>
+              <path d="M285 450 V525 H785 V450" fill="none" stroke="#0891b2" strokeWidth="3" strokeDasharray="8 6" markerStart="url(#topo-local-arrow)" markerEnd="url(#topo-local-arrow)" />
+              <rect x="465" y="505" width="225" height="42" rx="10" fill="#f7fafc" stroke="#cbd5e1" />
+              <text x="577" y="522" textAnchor="middle" fontSize="11" fontWeight="800" fill="#475569">LOCAL ROUTED LINK</text>
+              <text x="577" y="538" textAnchor="middle" fontSize="10" fill="#64748b">Network B | 10.10.10.0/31</text>
+              <path d="M850 390 H942" fill="none" stroke="#64748b" strokeWidth="2" markerEnd="url(#topo-device-arrow)" />
+              <path d="M942 402 H850" fill="none" stroke="#94a3b8" strokeWidth="1.5" markerEnd="url(#topo-device-arrow)" />
+              <text x="896" y="379" textAnchor="middle" fontSize="10" fill="#64748b">Wi-Fi / LAN</text>
+              <text x="640" y="584" textAnchor="middle" fontSize="12" fontWeight="800" fill="#0e7490">LOCAL BACKUP: CLIENT -&gt; ROUTER B -&gt; ROUTER A -&gt; LAPTOP SERVER</text>
+              <text x="640" y="606" textAnchor="middle" fontSize="11" fill="#64748b">Data remains reachable over the routed LAN link if cloud services are down and the local devices have power.</text>
+              <circle className="topology-packet" r="6" fill="#06b6d4"><animateMotion dur="4s" repeatCount="indefinite" path="M285 450 V525 H785 V450" /></circle>
+              <circle className="topology-packet" r="6" fill="#8b5cf6"><animateMotion dur="4s" repeatCount="indefinite" path="M785 450 V540 H285 V450" /></circle>
             </svg>
           </div>
 
-          <div className="mt-4 grid gap-3 md:grid-cols-3">
-            <div className="rounded-xl border border-amber-300/15 bg-amber-300/[0.05] p-4"><b className="text-sm text-amber-100">Network A · MCU LAN</b><p className="mt-1 text-xs leading-5 text-slate-400">R1: 192.168.10.1/24 · ESP32: 192.168.10.10/24 · gateway 192.168.10.1</p></div>
-            <div className="rounded-xl border border-slate-700 bg-slate-950/40 p-4"><b className="text-sm text-slate-100">Network B · router link</b><p className="mt-1 text-xs leading-5 text-slate-400">R1: 10.10.10.0/31 · R2: 10.10.10.1/31 · static routes both ways</p></div>
-            <div className="rounded-xl border border-teal-300/15 bg-teal-300/[0.05] p-4"><b className="text-sm text-teal-100">Network C · application LAN</b><p className="mt-1 text-xs leading-5 text-slate-400">R2: 172.168.10.1/24 · server: .20 · controller: .30</p></div>
+          <div className="mt-4 grid gap-3 md:grid-cols-2">
+            <div className="rounded-xl border border-cyan-300/15 bg-cyan-300/[0.05] p-4"><b className="text-sm text-cyan-100">Cloud route | normal operation</b><p className="mt-1 text-xs leading-5 text-slate-400">ESP32 -&gt; Router A -&gt; Internet -&gt; EMQX MQTT. Browser -&gt; Router B -&gt; Internet -&gt; Vercel website and EMQX over WSS.</p></div>
+            <div className="rounded-xl border border-amber-300/15 bg-amber-300/[0.05] p-4"><b className="text-sm text-amber-100">Local route | cloud fallback</b><p className="mt-1 text-xs leading-5 text-slate-400">ESP32 -&gt; Router A -&gt; laptop WebSocket server/database; Router B client reaches the laptop through the routed inter-router link.</p></div>
           </div>
-          <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-2 rounded-xl border border-slate-800 bg-slate-950/40 p-4 text-xs text-slate-400"><span className="inline-flex items-center gap-2"><span className="h-1 w-7 rounded bg-cyan-500" />Telemetry to controller</span><span className="inline-flex items-center gap-2"><span className="h-1 w-7 rounded bg-violet-500" />Commands back to ESP32</span><span>Internal routing only · no NAT · no cloud required</span></div>
-          <p className="mt-3 text-xs leading-5 text-amber-200/80">*The lecturer’s template uses 172.168.10.0/24, which is not an RFC 1918 private range. Use it only on an isolated lab network if that exact block is required; request approval before substituting a private subnet.</p>
+          <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-2 rounded-xl border border-slate-800 bg-slate-950/40 p-4 text-xs text-slate-400"><span className="inline-flex items-center gap-2"><span className="h-1 w-7 rounded bg-slate-500" />Internet / hosted services</span><span className="inline-flex items-center gap-2"><span className="h-1 w-7 rounded bg-cyan-500" />Local routed backup path</span><span>Router-to-router traffic uses static routing, no NAT</span></div>
+          <p className="mt-3 text-xs leading-5 text-amber-200/80">*The lecturer template uses 172.168.10.0/24 for the user LAN. This is outside the RFC 1918 private ranges; keep it only on an isolated lab network if required, or ask the lecturer to approve a private-range replacement.</p>
         </section>
 
         <section id="outline" className="mt-10 scroll-mt-6">
