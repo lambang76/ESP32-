@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowLeft, ArrowRight, CheckCircle2, Cloud, Code2, DoorOpen, Radio, Server, ShieldCheck, Terminal } from "lucide-react";
+import { ArrowLeft, ArrowRight, BookOpen, CheckCircle2, Cloud, Code2, DoorOpen, Radio, Server, ShieldCheck, Terminal } from "lucide-react";
 
 const sections = [
   {
@@ -133,6 +133,7 @@ export default function GuidePage() {
           <p className="text-xs font-bold tracking-widest text-cyan-300">INSTALLATION &amp; USER GUIDE</p>
           <h1 className="mt-4 text-4xl font-semibold sm:text-5xl">Start with the simulator,<br /><span className="text-cyan-300">then move to a physical ESP32.</span></h1>
           <p className="mt-5 leading-7 text-slate-400">Follow these steps to set up Supabase, EMQX, the dashboard, simulator, and device. This guide helps your team get started with the project.</p>
+          <Link href="/proposal-guide" className="mt-5 inline-flex items-center gap-2 rounded-xl border border-cyan-300/20 bg-cyan-300/[0.06] px-4 py-3 text-sm font-semibold text-cyan-100 transition hover:border-cyan-200/40 hover:bg-cyan-300/10"><BookOpen size={16} /> Open the proposal writing guide <ArrowRight size={15} /></Link>
         </div>
         <div className="mt-9 grid min-w-0 gap-7 lg:grid-cols-[220px_minmax(0,1fr)]">
           <aside className="h-fit min-w-0 rounded-2xl border border-slate-800 bg-slate-900/60 p-4 lg:sticky lg:top-5">
