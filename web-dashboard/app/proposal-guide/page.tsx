@@ -59,6 +59,20 @@ const risks = [
   ["Unauthorized remote access", "An exposed device page or open router rule could allow unwanted control.", "Prefer WireGuard and firewall allowlists. Do not expose the ESP32 plain HTTP server directly to the public internet. If a class demo requires port forwarding, document the risk and restrict access."],
 ];
 
+const templateRequirements = [
+  ["MCU hardware", "Use ESP32 with at least one sensor, one actuator, and an OLED/TFT/LCD display. The garage project can keep RC522 + reed switch + servo; add a display if the lecturer confirms this minimum applies."],
+  ["Two-router topology", "Show Router R1, Router R2, and three routed networks: 192.168.10.0/24, 10.10.10.0/31, and the application-side network specified by the lecturer. Use static routes and no NAT between the lab networks."],
+  ["Local socket server", "The template calls for a free local TCP socket and/or WebSocket server using JSON messages. Select one server placement (Network A or application Network C) and show ESP32 and controller clients connecting to it."],
+  ["Static addressing and lab operation", "Give the ESP32, server, and controller static IPs. The required demo can run on the lab LAN without internet. Do not make DDNS or a public cloud broker a dependency for this required path."],
+  ["CDIO evidence", "Keep the requirements, network/IP plan, wiring, socket message formats, workflow, implementation plan, test cases, budget, schedule, roles, success indicators, assessment, risks, and project outputs."],
+];
+
+const draftGaps = [
+  ["Already fits the garage topic", "RFID UID validation, reed-switch door feedback, servo movement, local access, hardware safety notes, and measurable test cases are already present in the project draft."],
+  ["Needs alignment with the lecturer template", "The current draft uses one router, direct HTTP to the ESP32, Destination NAT/DDNS over the public internet, and no socket server. It also does not list an OLED/TFT/LCD. These differ from the required two-router, static-routed, local socket-server design."],
+  ["Keep as an optional comparison/demo", "The existing Next.js + EMQX Cloud dashboard can be described as an optional cloud extension or a separate demo. Do not draw it as the required local socket-server path unless the group actually implements a server adapter and tests it."],
+];
+
 export default function ProposalGuidePage() {
   return (
     <main className="min-h-screen bg-[#07111e] text-slate-100">
@@ -104,6 +118,19 @@ export default function ProposalGuidePage() {
           </div>
         </section>
 
+        <section id="lecturer-template" className="mt-10 scroll-mt-6 rounded-3xl border border-cyan-300/15 bg-slate-900/60 p-5 sm:p-8">
+          <p className="text-xs font-bold uppercase tracking-widest text-cyan-300">Using the two provided documents</p>
+          <h2 className="mt-2 text-2xl font-semibold">Follow the lecturer’s RPP-CDIO template; replace its greenhouse example with Smart Garage</h2>
+          <p className="mt-3 max-w-4xl text-sm leading-6 text-slate-400">The template’s greenhouse paragraphs and example sensor values are sample content. Keep its required project structure and network constraints, then use the Smart Garage proposal for the topic, RFID access, door sensing, and servo details.</p>
+          <div className="mt-5 grid gap-3 md:grid-cols-2">
+            {templateRequirements.map(([title, description]) => <article key={title} className="rounded-xl border border-slate-800 bg-slate-950/40 p-4"><h3 className="text-sm font-semibold text-cyan-100">{title}</h3><p className="mt-2 text-sm leading-6 text-slate-400">{description}</p></article>)}
+          </div>
+          <h3 className="mt-7 text-lg font-semibold">What to change in the current Smart Garage draft</h3>
+          <div className="mt-3 space-y-3">{draftGaps.map(([title, description]) => <article key={title} className="rounded-xl border border-slate-800 bg-slate-950/40 p-4"><h4 className="text-sm font-semibold text-violet-100">{title}</h4><p className="mt-2 text-sm leading-6 text-slate-400">{description}</p></article>)}</div>
+          <div className="mt-4 rounded-xl border border-amber-300/20 bg-amber-300/[0.06] p-4 text-sm leading-6 text-amber-50/80"><b className="text-amber-100">Check the IP plan with the lecturer:</b> the template’s 172.168.10.0/24 block is outside the RFC 1918 private ranges. Keep it only on an isolated lab network if the lecturer requires that exact block; otherwise request approval to replace it with a private subnet. The 10.10.10.0/31 link is a point-to-point link and may need /30 if the selected router setup does not support /31.</div>
+          <p className="mt-4 text-sm leading-6 text-slate-400">Before submission, redraw the topology and update the IP table, router routes, socket protocol table, BOM, schedule, and tests together. The template’s sample MikroTik commands and greenhouse code are examples, not ready-to-run project configuration.</p>
+        </section>
+
         <section id="risks" className="mt-10 scroll-mt-6 rounded-3xl border border-amber-300/15 bg-slate-900/60 p-5 sm:p-8">
           <div className="mb-5 flex items-center gap-3"><span className="grid h-10 w-10 place-items-center rounded-xl bg-amber-300/10 text-amber-200"><ShieldAlert size={20} /></span><div><p className="text-xs font-bold uppercase tracking-widest text-amber-200">Availability and safety</p><h2 className="mt-1 text-2xl font-semibold">Risks and mitigations to discuss</h2></div></div>
           <div className="space-y-3">{risks.map(([risk, impact, mitigation]) => <article key={risk} className="grid gap-2 rounded-xl border border-slate-800 bg-slate-950/40 p-4 md:grid-cols-[190px_1fr_1.3fr]"><h3 className="text-sm font-semibold text-amber-100">{risk}</h3><p className="text-sm leading-6 text-slate-400">{impact}</p><p className="text-sm leading-6 text-slate-300">{mitigation}</p></article>)}</div>
@@ -114,8 +141,8 @@ export default function ProposalGuidePage() {
           <p className="text-xs font-bold uppercase tracking-widest text-rose-200">Project accuracy check</p>
           <h2 className="mt-2 text-2xl font-semibold">Separate the proposal from what the repository currently demonstrates</h2>
           <div className="mt-4 grid gap-4 md:grid-cols-2">
-            <div className="rounded-2xl border border-slate-800 bg-slate-950/50 p-5"><h3 className="font-semibold text-cyan-100">Proposal design</h3><p className="mt-2 text-sm leading-6 text-slate-400">The revised proposal describes RFID RC522 access, a reed switch for real door position, a servo actuator, an ESP32-hosted local page, and MikroTik remote networking. Call these proposed components until each has been assembled and tested.</p></div>
-            <div className="rounded-2xl border border-slate-800 bg-slate-950/50 p-5"><h3 className="font-semibold text-violet-100">Current repository demo</h3><p className="mt-2 text-sm leading-6 text-slate-400">The web dashboard and MQTT dummy simulator can demonstrate the cloud messaging flow. The current Arduino firmware/local page may not yet implement the proposal’s RFID, reed switch, servo, and router VPN design. Verify the checked-in sketch before describing any hardware as implemented.</p></div>
+            <div className="rounded-2xl border border-slate-800 bg-slate-950/50 p-5"><h3 className="font-semibold text-cyan-100">Proposal draft</h3><p className="mt-2 text-sm leading-6 text-slate-400">The supplied Smart Garage draft describes RFID RC522 access, a reed switch for real door position, a servo actuator, an ESP32 web page, and one-router DDNS access. Treat components and tests as planned until physically assembled and verified.</p></div>
+            <div className="rounded-2xl border border-slate-800 bg-slate-950/50 p-5"><h3 className="font-semibold text-violet-100">Current repository demo</h3><p className="mt-2 text-sm leading-6 text-slate-400">The Next.js dashboard and MQTT dummy simulator demonstrate a cloud messaging path. They do not by themselves satisfy the template’s two-router local socket-server requirement. Keep the two architectures clearly separated unless the team implements and tests an adapter.</p></div>
           </div>
           <p className="mt-4 text-sm leading-6 text-slate-500">Do not include DHT temperature/humidity as a required proposal feature if the group has removed that sensor from the agreed design.</p>
         </section>
